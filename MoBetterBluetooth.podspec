@@ -134,6 +134,6 @@ A more better (mo simple, mo intuitive) way to use iOS's Core Bluetooth function
 
   # s.xcconfig = { "HEADER_SEARCH_PATHS" => "$(SDKROOT)/usr/include/libxml2" }
 
-  s.dependency "VerticonsToolbox", "~> 0.0"
+  s.dependency "VerticonsToolbox"
 
 end
