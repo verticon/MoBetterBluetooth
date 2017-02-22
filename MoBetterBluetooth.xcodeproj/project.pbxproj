@@ -15,6 +15,7 @@
 		E1B761F71E5DB5DA00B01E19 /* CentralManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B761F21E5DB5DA00B01E19 /* CentralManager.swift */; };
 		E1B761F81E5DB5DA00B01E19 /* Subscriptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B761F31E5DB5DA00B01E19 /* Subscriptions.swift */; };
 		E1B761F91E5DB5DA00B01E19 /* Types.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B761F41E5DB5DA00B01E19 /* Types.swift */; };
+		E1B762341E5E145E00B01E19 /* VerticonsToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B762331E5E145E00B01E19 /* VerticonsToolbox.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,7 @@
 		E1B761F21E5DB5DA00B01E19 /* CentralManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = CentralManager.swift; path = CentralManager/CentralManager.swift; sourceTree = "<group>"; };
 		E1B761F31E5DB5DA00B01E19 /* Subscriptions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Subscriptions.swift; path = CentralManager/Subscriptions.swift; sourceTree = "<group>"; };
 		E1B761F41E5DB5DA00B01E19 /* Types.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Types.swift; path = CentralManager/Types.swift; sourceTree = "<group>"; };
+		E1B762331E5E145E00B01E19 /* VerticonsToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VerticonsToolbox.framework; path = "../VerticonsToolbox/build/Debug-iphoneos/VerticonsToolbox.framework"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -35,6 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1B762341E5E145E00B01E19 /* VerticonsToolbox.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -46,6 +49,7 @@
 			children = (
 				E1B761E21E5DB07C00B01E19 /* MoBetterBluetooth */,
 				E1B761E11E5DB07C00B01E19 /* Products */,
+				E1B762321E5E145D00B01E19 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -79,6 +83,14 @@
 				E1B761F41E5DB5DA00B01E19 /* Types.swift */,
 			);
 			name = CentralManager;
+			sourceTree = "<group>";
+		};
+		E1B762321E5E145D00B01E19 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				E1B762331E5E145E00B01E19 /* VerticonsToolbox.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

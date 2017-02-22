@@ -8,6 +8,7 @@
 
 import Foundation
 import CoreLocation
+import VerticonsToolbox
 
 func ==(lhs: BeaconRegion, rhs: BeaconRegion) -> Bool { return lhs.uuid == rhs.uuid }
 

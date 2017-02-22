@@ -8,6 +8,7 @@
 import UIKit
 import CoreLocation
 import CoreBluetooth
+import VerticonsToolbox
 
 public func nameForAuthorizationStatus(_ status: CLAuthorizationStatus) -> String {
     switch status {

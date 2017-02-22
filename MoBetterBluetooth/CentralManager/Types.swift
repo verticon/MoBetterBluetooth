@@ -8,6 +8,8 @@
 
 import UIKit
 import CoreBluetooth
+import VerticonsToolbox
+
 
 public protocol CentralManagerTypesFactory {
     func makePeripheral(for cbPeripheral: CBPeripheral, advertisementData: [String : AnyObject], signalStrength: NSNumber) -> CentralManager.Peripheral
