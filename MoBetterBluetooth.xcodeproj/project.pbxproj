@@ -72,10 +72,10 @@
 		E1B761D61E5DB07C00B01E19 = {
 			isa = PBXGroup;
 			children = (
-				E102AC6B1E6051610080A5F1 /* VerticonsToolbox.xcodeproj */,
 				E1B761E21E5DB07C00B01E19 /* MoBetterBluetooth */,
 				E1B761E11E5DB07C00B01E19 /* Products */,
 				E1B762321E5E145D00B01E19 /* Frameworks */,
+				E102AC6B1E6051610080A5F1 /* VerticonsToolbox.xcodeproj */,
 			);
 			sourceTree = "<group>";
 		};
