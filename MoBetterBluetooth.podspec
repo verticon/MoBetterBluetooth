@@ -80,7 +80,7 @@ A more better (mo simple, mo intuitive) way to use iOS's Core Bluetooth function
   #  Supports git, hg, bzr, svn and HTTP.
   #
 
-  s.source       = { :git => "https://github.com/verticon/MoBetterBluetooth.git", :tag => "#{s.version}" }
+  s.source       = { :git => "https://github.com/verticon/MoBetterBluetooth.git", :tag => "#{s.version}", submodules: true }
 
 
   # ――― Source Code ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
@@ -91,7 +91,7 @@ A more better (mo simple, mo intuitive) way to use iOS's Core Bluetooth function
   #  Not including the public_header_files will make all headers public.
   #
 
-  s.source_files  = "MoBetterBluetooth", "MoBetterBluetooth/**/*.{h,swift}"
+  s.source_files  = "MoBetterBluetooth/**/*.{h,swift}"
   # s.exclude_files = "Classes/Exclude"
 
   # s.public_header_files = "Classes/**/*.h"
@@ -134,6 +134,6 @@ A more better (mo simple, mo intuitive) way to use iOS's Core Bluetooth function
 
   # s.xcconfig = { "HEADER_SEARCH_PATHS" => "$(SDKROOT)/usr/include/libxml2" }
 
-  s.dependency "VerticonsToolbox"
+  # s.dependency
 
 end
