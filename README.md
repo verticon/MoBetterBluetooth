@@ -42,6 +42,8 @@
 
                     case .peripheralReady(let peripheral): // A peripheral matching our subscription has been found
 
+                        self.manager.stopScanning()
+
                         let buttonLedService = peripheral[buttonLedServiceId]!
                         let ledCharacteristic = buttonLedService[ledCharacteristicId]!
                         let buttonCharacteristic = buttonLedService[buttonCharacteristicId]!
@@ -52,13 +54,16 @@
                             try buttonCharacteristic.notify(enabled: true) { result in
 
                                 switch result { // Respond to a button press by toggling the LED.
+
                                     case .success:
                                         do {
                                             ledOn = !ledOn
                                             try ledCharacteristic.write(Data([ledOn ? 1 : 0])) { result in
                                                 switch result {
+
                                                     case .success:
                                                         print("The LED was toggled \(ledOn ? "on" : "off")")
+
                                                     case .failure(let error):
                                                         print("The LED could not be toggled: \(error)")
                                                 }
