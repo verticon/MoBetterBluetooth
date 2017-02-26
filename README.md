@@ -1,85 +1,83 @@
 # Mo Better Bluetooth
-A more better (mo simple, mo intuitive) way to use iOS's Core Bluetooth functionality.
+## A more better (mo simple, mo intuitive) way to use iOS's Core Bluetooth functionality.
 
 
-import UIKit
-import CoreBluetooth
-import MoBetterBluetooth
 
-class ViewController: UIViewController, CentralManagerTypesFactory {
+    import UIKit
+    import CoreBluetooth
+    import MoBetterBluetooth
 
-    private var manager: CentralManager!
-    
+    class ViewController: UIViewController, CentralManagerTypesFactory {
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        // Subscribe to a service that provides access to an LED and a push button.
+        private var manager: CentralManager!
 
-        let ledCharacteristicId = CentralManager.Identifier(uuid: CBUUID(string: "DCBA1523-1212-EFDE-1523-785FEF13D123"), name: "LED")
-        let ledSubscription = CentralManager.CharacteristicSubscription(id: ledCharacteristicId, discoverDescriptors: false)
+        override func viewDidLoad() {
+            super.viewDidLoad()
 
-        let buttonCharacteristicId = CentralManager.Identifier(uuid: CBUUID(string: "DCBA1524-1212-EFDE-1523-785FEF13D123"), name: "Button")
-        let buttonSubscription = CentralManager.CharacteristicSubscription(id: buttonCharacteristicId, discoverDescriptors: false)
+            // Subscribe to a service that provides access to an LED and a push button.
 
-        let buttonLedServiceId = CentralManager.Identifier(uuid: CBUUID(string: "DCBA3154-1212-EFDE-1523-785FEF13D123"), name: "ButtonLed")
-        let buttonLedSubscription = CentralManager.ServiceSubscription(id: buttonLedServiceId, characteristics: [buttonSubscription, ledSubscription])
+            let ledCharacteristicId = CentralManager.Identifier(uuid: CBUUID(string: "DCBA1523-1212-EFDE-1523-785FEF13D123"), name: "LED")
+            let ledSubscription = CentralManager.CharacteristicSubscription(id: ledCharacteristicId, discoverDescriptors: false)
 
-        let peripheralSubscription = CentralManager.PeripheralSubscription(services: [buttonLedSubscription])
-        
-        // Obtain a manager for our subscription
-        manager = CentralManager(subscription: peripheralSubscription, factory: self) { event in
+            let buttonCharacteristicId = CentralManager.Identifier(uuid: CBUUID(string: "DCBA1524-1212-EFDE-1523-785FEF13D123"), name: "Button")
+            let buttonSubscription = CentralManager.CharacteristicSubscription(id: buttonCharacteristicId, discoverDescriptors: false)
 
-            switch event { // Respond to the manager's events
-                
-                case .managerReady: // Core Bluetooth is available and ready to use
+            let buttonLedServiceId = CentralManager.Identifier(uuid: CBUUID(string: "DCBA3154-1212-EFDE-1523-785FEF13D123"), name: "ButtonLed")
+            let buttonLedSubscription = CentralManager.ServiceSubscription(id: buttonLedServiceId, characteristics: [buttonSubscription, ledSubscription])
 
-                    do {
-                        try self.manager.startScanning()
-                    } catch {
-                        print("Cannot start scanning: \(error).")
-                    }
-                    
-                case .peripheralReady(let peripheral): // A peripheral matching our subscription has been found
+            let peripheralSubscription = CentralManager.PeripheralSubscription(services: [buttonLedSubscription])
 
-                    let buttonLedService = peripheral[buttonLedServiceId]!
-                    let ledCharacteristic = buttonLedService[ledCharacteristicId]!
-                    let buttonCharacteristic = buttonLedService[buttonCharacteristicId]!
+            // Obtain a manager for our subscription
+            manager = CentralManager(subscription: peripheralSubscription, factory: self) { event in
 
-                    var ledOn = false
-                    
-                    do { // Enable button press notifications
-                        try buttonCharacteristic.notify(enabled: true) { result in
+                switch event { // Respond to the manager's events
 
-                            switch result { // Respond to a button press by toggling the LED.
-                                case .success:
-                                    do {
-                                        ledOn = !ledOn
-                                        try ledCharacteristic.write(Data([ledOn ? 1 : 0])) { result in
-                                            switch result {
-                                                case .success:
-                                                    print("The LED was toggled \(ledOn ? "on" : "off")")
-                                                case .failure(let error):
-                                                    print("The LED could not be toggled: \(error)")
-                                            }
-                                        }
-                                    } catch {
-                                        print("Cannot write the LED:  \(error)")
-                                    }
+                    case .managerReady: // Core Bluetooth is available and ready to use
 
-                                case .failure(let error):
-                                    print("Button notifications produced an error: \(error).")
-                                }
+                        do {
+                            try self.manager.startScanning()
+                        } catch {
+                            print("Cannot start scanning: \(error).")
                         }
-                    } catch {
-                        print("Cannot enable button notifications: \(error).")
+
+                    case .peripheralReady(let peripheral): // A peripheral matching our subscription has been found
+
+                        let buttonLedService = peripheral[buttonLedServiceId]!
+                        let ledCharacteristic = buttonLedService[ledCharacteristicId]!
+                        let buttonCharacteristic = buttonLedService[buttonCharacteristicId]!
+
+                        var ledOn = false
+
+                        do { // Enable button press notifications
+                            try buttonCharacteristic.notify(enabled: true) { result in
+
+                                switch result { // Respond to a button press by toggling the LED.
+                                    case .success:
+                                        do {
+                                            ledOn = !ledOn
+                                            try ledCharacteristic.write(Data([ledOn ? 1 : 0])) { result in
+                                                switch result {
+                                                    case .success:
+                                                        print("The LED was toggled \(ledOn ? "on" : "off")")
+                                                    case .failure(let error):
+                                                        print("The LED could not be toggled: \(error)")
+                                                }
+                                            }
+                                        } catch {
+                                            print("Cannot write the LED:  \(error)")
+                                        }
+
+                                    case .failure(let error):
+                                        print("Button notifications produced an error: \(error).")
+                                    }
+                            }
+                        } catch {
+                            print("Cannot enable button notifications: \(error).")
+                    }
+
+                    default:
+                        print("Central Manager Event - \(event).")
                 }
-                
-                default:
-                    print("Central Manager Event - \(event).")
             }
         }
     }
-}
-
-
