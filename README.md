@@ -1,5 +1,5 @@
 # Mo Better Bluetooth
-## A more better (mo simple, mo intuitive) way to use iOS's Core Bluetooth functionality.
+## A better (mo simple, mo intuitive) way to use iOS's Core Bluetooth functionality.
 
 
 
@@ -36,7 +36,8 @@
 
                         do {
                             try self.manager.startScanning()
-                        } catch {
+                        }
+                        catch {
                             print("Cannot start scanning: \(error).")
                         }
 
@@ -68,17 +69,19 @@
                                                         print("The LED could not be toggled: \(error)")
                                                 }
                                             }
-                                        } catch {
+                                        }
+                                        catch {
                                             print("Cannot write the LED:  \(error)")
                                         }
 
                                     case .failure(let error):
                                         print("Button notifications produced an error: \(error).")
-                                    }
+                                }
                             }
-                        } catch {
+                        }
+                        catch {
                             print("Cannot enable button notifications: \(error).")
-                    }
+                        }
 
                     default:
                         print("Central Manager Event - \(event).")
@@ -86,3 +89,6 @@
             }
         }
     }
+
+
+[![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
