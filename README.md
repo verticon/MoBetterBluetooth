@@ -92,4 +92,7 @@
 
 See [ButtonLed](https://github.com/verticon/ButtonLed.git) for a complete example.
 
+Notes:
+- Clone this repo with the --recursive option. MoBetterBluetooth.xcodeproj includes subprojects from the submodule.
+
 [![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
