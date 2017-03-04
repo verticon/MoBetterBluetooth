@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
   #
 
   s.name         = "MoBetterBluetooth"
-  s.version      = "0.0.2"
+  s.version      = "0.0.3"
   s.summary      = "A more better way to use iOS's Core Bluetooth functionality."
 
   # This description is used to generate tags and improve search results.
@@ -133,6 +133,6 @@ A more better (mo simple, mo intuitive) way to use iOS's Core Bluetooth function
 
   # s.xcconfig = { "HEADER_SEARCH_PATHS" => "$(SDKROOT)/usr/include/libxml2" }
 
-  s.dependency "VerticonsToolbox"
+  s.dependency "VerticonsToolbox", "~> 0.0.4"
 
 end
