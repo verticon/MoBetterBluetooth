@@ -1,7 +1,9 @@
 # Mo Better Bluetooth
 ## A better (mo simple, mo intuitive) way to use iOS's Core Bluetooth functionality.
 
+MoBetterBluetooth is a work in progress. It currently provides a mo better way to create central managers. Peripheral managers are coming. Beacon support is partially developed. When MoBetterBluetooth reaches version 1.0.0 then it will be ready for prime time.
 
+Below is some sample code. See [ButtonLed](https://github.com/verticon/ButtonLed.git) for a complete example.
 
     import UIKit
     import CoreBluetooth
@@ -27,7 +29,7 @@
 
             let peripheralSubscription = CentralManager.PeripheralSubscription(services: [buttonLedSubscription])
 
-            // Obtain a manager for our subscription
+            // Obtain a manager for the subscription
             manager = CentralManager(subscription: peripheralSubscription, factory: self) { event in
 
                 switch event { // Respond to the manager's events
@@ -41,7 +43,7 @@
                             print("Cannot start scanning: \(error).")
                         }
 
-                    case .peripheralReady(let peripheral): // A peripheral matching our subscription has been found
+                    case .peripheralReady(let peripheral): // A peripheral matching the subscription has been found
 
                         self.manager.stopScanning()
 
@@ -90,9 +92,14 @@
         }
     }
 
-See [ButtonLed](https://github.com/verticon/ButtonLed.git) for a complete example.
 
 Notes:
-- Clone this repo with the --recursive option. MoBetterBluetooth.xcodeproj includes subprojects from the submodule.
+
+* The MoBetterBluetooth framework's xcode project includes a subprojects which are in the submodules of the framework's GitHub repository. Therefore, clone the framework's repository using the --recursive option so as to obtain the submodules. Downloading the ZIP archive will not work; it does not capture the submodules.
+
+* Dependency Managers:
+    * CocoaPods: There are pods for MoBetterBluetooth and its dependencies.
+
+    * Carthage: You can add `github "verticon/MoBetterBluetooth" ~> x.x.x` to your Cartfile. `carthage  update` will build MoBetterBlutooth and its dependencies. As usual, you will find the binaries in Carthage/Build and the project files in Carthage/Checkouts. A consequence of using submodules is that the dependency projects will exist in two places: Carthage/Checkouts and Carthage/Checkouts/MoBeterBluetooth/Carthage/Checkouts. If you choose to ad the MoBetterBlutooth project to your xcode project/workspace then you only need to add /Carthage/Checkouts/MoBetterBluetooth/MoBetterBlutooth.xcodeproj; doing so will give you everything.
 
 [![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
