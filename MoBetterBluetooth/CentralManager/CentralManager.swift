@@ -40,13 +40,17 @@ open class CentralManager {
     private let cbManager: CBCentralManager
     private let cbManagerDelegate: CentralManagerDelegate
 
-    // If subscription is empty then the Central Manager will report any and all peripherals.
+    // If subscription is nil or empty then the Central Manager will report any and all peripherals.
     // Else the Central Manager will only report those peripherals that provides the specified services.
-    public init(subscription: PeripheralSubscription, factory: CentralManagerTypesFactory, eventHandler: @escaping Event.Handler) {
+    public init(subscription: PeripheralSubscription?, factory: CentralManagerTypesFactory, eventHandler: @escaping Event.Handler) {
 
-        cbManagerDelegate = CentralManagerDelegate(subscription: subscription, factory: factory, eventHandler: eventHandler)
+        self.subscription = subscription == nil ? PeripheralSubscription(services: []) : subscription!
+        
+        cbManagerDelegate = CentralManagerDelegate(subscription: self.subscription, factory: factory, eventHandler: eventHandler)
         cbManager = CBCentralManager(delegate: cbManagerDelegate, queue: nil)
     }
+    
+    public private(set) var subscription: PeripheralSubscription
     
     public func startScanning() throws {
         guard cbManagerDelegate.ready else { throw ErrorCode.notReady("Scanning may not be started until after the ready event has been delivered.") }
