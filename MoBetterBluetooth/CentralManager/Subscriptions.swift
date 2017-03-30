@@ -20,7 +20,7 @@ extension CentralManager {
             self.name = name ?? nameForWellKnownUuid(uuid)
         }
     }
-    
+
     public struct CharacteristicSubscription {
         public let id: Identifier
         public let discoverDescriptors: Bool
@@ -33,9 +33,9 @@ extension CentralManager {
 
     public struct ServiceSubscription {
         public let id: Identifier
-        public let characteristics: [CharacteristicSubscription] // If empty then all of the service's characteristics and descriptors will be discovered
+        public var characteristics: [CharacteristicSubscription] // If empty then all of the service's characteristics and descriptors will be discovered
         
-        public init(id: Identifier, characteristics: [CharacteristicSubscription]) {
+        public init(id: Identifier, characteristics: [CharacteristicSubscription] = []) {
             self.id = id
             self.characteristics = characteristics
         }
@@ -65,9 +65,9 @@ extension CentralManager {
     }
 
     public struct PeripheralSubscription {
-        public let services: [ServiceSubscription] // If empty then all of the peripheral's services, characteristics and descriptors will be discovered
+        public var services: [ServiceSubscription] // If empty then all of the peripheral's services, characteristics and descriptors will be discovered
    
-        public init(services: [ServiceSubscription]) {
+        public init(services: [ServiceSubscription] = []) {
             self.services = services
         }
 
@@ -103,5 +103,11 @@ extension CentralManager {
         func getServiceUuids() -> [CBUUID]? {
             return services.isEmpty ? nil : services.map() { $0.id.uuid }
         }
+    }
+}
+
+extension CentralManager.Identifier : Equatable {
+    public static func == (lhs: CentralManager.Identifier, rhs: CentralManager.Identifier) -> Bool {
+        return lhs.uuid == rhs.uuid
     }
 }

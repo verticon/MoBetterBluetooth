@@ -35,27 +35,41 @@ open class CentralManager {
         case characteristic(String, Characteristic, Error?)
     }
     
+    private class Factory : CentralManagerTypesFactory {}
+    
     // Instance Members **********************************************************************************************
 
     private let cbManager: CBCentralManager
     private let cbManagerDelegate: CentralManagerDelegate
 
-    // If subscription is nil or empty then the Central Manager will report any and all peripherals.
-    // Else the Central Manager will only report those peripherals that provides the specified services.
-    public init(subscription: PeripheralSubscription?, factory: CentralManagerTypesFactory, eventHandler: @escaping Event.Handler) {
+    // If the subscription is empty then the Central Manager will report any and all peripherals;
+    // else the Central Manager will only report those peripherals that provide the specified services.
+    public init(name: String = "", subscription: PeripheralSubscription = PeripheralSubscription(), factory: CentralManagerTypesFactory = Factory(), eventHandler: @escaping Event.Handler) {
 
-        self.subscription = subscription == nil ? PeripheralSubscription(services: []) : subscription!
+        self.name = name
         
-        cbManagerDelegate = CentralManagerDelegate(subscription: self.subscription, factory: factory, eventHandler: eventHandler)
+        cbManagerDelegate = CentralManagerDelegate(subscription: subscription, factory: factory, eventHandler: eventHandler)
         cbManager = CBCentralManager(delegate: cbManagerDelegate, queue: nil)
     }
     
-    public private(set) var subscription: PeripheralSubscription
+    public private(set) var name: String
+
+    public var subscription: PeripheralSubscription {
+        get {
+            return cbManagerDelegate.subscription
+        }
+    }
+    
+    public var ready: Bool {
+        get {
+            return cbManagerDelegate.ready
+        }
+    }
     
     public func startScanning() throws {
-        guard cbManagerDelegate.ready else { throw ErrorCode.notReady("Scanning may not be started until after the ready event has been delivered.") }
+        guard ready else { throw ErrorCode.notReady("Scanning may not be started until after the ready event has been delivered.") }
         
-        cbManager.scanForPeripherals(withServices: cbManagerDelegate.subscription.getServiceUuids(), options: nil)
+        cbManager.scanForPeripherals(withServices: subscription.getServiceUuids(), options: nil)
     }
 
     public func stopScanning() {
