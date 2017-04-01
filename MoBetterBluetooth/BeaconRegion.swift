@@ -132,7 +132,7 @@ open class BeaconRegion : NSObject, NSCoding {
         }
 
         @objc func locationManager(_ manager: CLLocationManager, monitoringDidFailFor region: CLRegion?, withError error: Error) {
-            print("LocationManagerDelegate - Monitoring failed for the \"\(region?.identifier)\" region: \(error)")
+            print("LocationManagerDelegate - Monitoring failed for the \"\(String(describing: region?.identifier))\" region: \(error)")
         }
         
         @objc func locationManager(_ manager: CLLocationManager, rangingBeaconsDidFailFor region: CLBeaconRegion, withError error: Error) {
