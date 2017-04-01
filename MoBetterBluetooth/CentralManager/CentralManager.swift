@@ -9,7 +9,12 @@
 import UIKit
 import CoreBluetooth
 
-open class CentralManager {
+/*
+ *  1. Create a CentralManager
+ *  2. Set the eventHandler - Doing this initiates checking if bluetooth is available and permissioned; culminating in the Ready event.
+ *  3. Call startScanning().
+ */
+public class CentralManager {
 
     // Types *********************************************************************************************************
 
@@ -35,44 +40,47 @@ open class CentralManager {
         case characteristic(String, Characteristic, Error?)
     }
     
-    private class Factory : CentralManagerTypesFactory {}
+    private class DefaultFactory : CentralManagerTypesFactory {}
     
     // Instance Members **********************************************************************************************
 
-    private let cbManager: CBCentralManager
-    private let cbManagerDelegate: CentralManagerDelegate
+    private var cbManager: CBCentralManager?
 
     // If the subscription is empty then the Central Manager will report any and all peripherals;
     // else the Central Manager will only report those peripherals that provide the specified services.
-    public init(name: String = "", subscription: PeripheralSubscription = PeripheralSubscription(), factory: CentralManagerTypesFactory = Factory(), eventHandler: @escaping Event.Handler) {
-
-        self.name = name
-        
-        cbManagerDelegate = CentralManagerDelegate(subscription: subscription, factory: factory, eventHandler: eventHandler)
-        cbManager = CBCentralManager(delegate: cbManagerDelegate, queue: nil)
+    public init(subscription: PeripheralSubscription, factory: CentralManagerTypesFactory = DefaultFactory()) {
+        self.subscription = subscription
+        self.factory = factory
+        ready = false
     }
     
-    public private(set) var name: String
-
-    public var subscription: PeripheralSubscription {
+    public var name: String {
         get {
-            return cbManagerDelegate.subscription
+            return subscription.name
         }
     }
+
+    public private(set) var subscription: PeripheralSubscription
     
-    public var ready: Bool {
-        get {
-            return cbManagerDelegate.ready
+    public private(set) var factory: CentralManagerTypesFactory
+    
+    public internal(set) var ready: Bool
+
+    public var eventHandler: Event.Handler? {
+        didSet {
+            if let _ = eventHandler, cbManager == nil { // Once we've got an event handler we can do something useful. Otherwise we're just spinning internally.
+                cbManager = CBCentralManager(delegate: CentralManagerDelegate(centralManager: self), queue: nil)
+            }
         }
     }
     
     public func startScanning() throws {
         guard ready else { throw ErrorCode.notReady("Scanning may not be started until after the ready event has been delivered.") }
         
-        cbManager.scanForPeripherals(withServices: subscription.getServiceUuids(), options: nil)
+        cbManager?.scanForPeripherals(withServices: subscription.getServiceUuids(), options: nil)
     }
 
     public func stopScanning() {
-        if cbManager.isScanning { cbManager.stopScan() }
+        if let _ = cbManager?.isScanning { cbManager?.stopScan() }
     }
 }
