@@ -178,15 +178,3 @@ extension CentralManager.Identifier : Equatable {
         return lhs.uuid == rhs.uuid
     }
 }
-
-extension Array where Element == Encodable.Properties {
-    func decode<T:Encodable>(type: T.Type) -> [T] {
-        return flatMap{ T($0) }
-    }
-}
-
-extension Array where Element : Encodable {
-    func encode() -> [Encodable.Properties] {
-        return map{ $0.encode() }
-    }
-}
