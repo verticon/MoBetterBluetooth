@@ -8,6 +8,7 @@
 
 import UIKit
 import CoreBluetooth
+import VerticonsToolbox
 
 /*
  *  1. Create a CentralManager
@@ -45,13 +46,16 @@ public class CentralManager {
     // Instance Members **********************************************************************************************
 
     private var cbManager: CBCentralManager?
+    private var cbManagerDelegate: CentralManagerDelegate? // We need to hang on to it because the CBCentralManager's delegate is a weak reference
 
     // If the subscription is empty then the Central Manager will report any and all peripherals;
     // else the Central Manager will only report those peripherals that provide the specified services.
-    public init(subscription: PeripheralSubscription, factory: CentralManagerTypesFactory = DefaultFactory()) {
-        self.subscription = subscription
-        self.factory = factory
+    public init(subscription: PeripheralSubscription, factory: CentralManagerTypesFactory = DefaultFactory(), eventHandler: Event.Handler? = nil) {
         ready = false
+        self.factory = factory
+        self.subscription = subscription
+
+        self.eventHandler = eventHandler // Do this last
     }
     
     public var name: String {
@@ -66,14 +70,32 @@ public class CentralManager {
     
     public internal(set) var ready: Bool
 
+    // Setting the event handler to nil will stop events from coming (they will be discarded)
+    private var _eventHandler: Event.Handler?
     public var eventHandler: Event.Handler? {
-        didSet {
-            if let _ = eventHandler, cbManager == nil { // Once we've got an event handler we can do something useful. Otherwise we're just spinning internally.
-                cbManager = CBCentralManager(delegate: CentralManagerDelegate(centralManager: self), queue: nil)
+        get {
+            return _eventHandler
+        }
+        set {
+            lockObject(self) {
+                _eventHandler = newValue
+                if let _ = eventHandler, cbManager == nil { // Wait until we've got an event handler, else we're just "spinning our wheels".
+                    cbManagerDelegate = CentralManagerDelegate(centralManager: self)
+                    cbManager = CBCentralManager(delegate: cbManagerDelegate, queue: nil)
+                }
             }
         }
     }
     
+    // Used internally by the delegates
+    func sendEvent(_ event: Event) {
+        lockObject(self) {
+            if let handler = eventHandler {
+                handler(event)
+            }
+        }
+    }
+
     public func startScanning() throws {
         guard ready else { throw ErrorCode.notReady("Scanning may not be started until after the ready event has been delivered.") }
         

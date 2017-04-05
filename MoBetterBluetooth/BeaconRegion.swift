@@ -351,17 +351,17 @@ open class BeaconRegion : NSObject, NSCoding {
 
     // The returned value can be used to remove the listener
     open func addListener(_ listener: @escaping Listener) -> Int {
-        return lockObject(self) {
+        return lockObject(self) { () -> Int in
             let key = self.nextListenerKey; self.nextListenerKey += 1
             self.listeners[key] = listener
             return key
-        } as! Int
+        }!
     }
     
     open func removeListener(_ key: Int) -> Bool {
         return lockObject(self) {
             self.listeners.removeValue(forKey: key) != nil ? true : false
-        } as! Bool
+        }!
     }
     
     open func beaconAtIndex(_ index: Int) -> BeaconRegion.Beacon? {
@@ -433,18 +433,18 @@ open class BeaconRegion : NSObject, NSCoding {
     fileprivate func fireEvent(_ event: Event, beacon: Beacon?) {
         print(event.describeEvent(self, beacon: beacon))
 
-        _ = lockObject(BeaconRegion.self) {
+        _ = lockObject(BeaconRegion.self) { () -> Bool in
             for (_, listener) in BeaconRegion.listeners {
                 listener(self, event, beacon)
             }
-            return nil
+            return true
         }
 
-        _ = lockObject(self) {
+        _ = lockObject(self) { () -> Bool in
             for (_, listener) in self.listeners {
                 listener(self, event, beacon)
             }
-            return nil
+            return true
         }
     }
 }

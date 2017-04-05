@@ -25,19 +25,19 @@ extension CentralManager {
         // TODO: Handle included services
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didDiscoverServices error: Error?) {
             guard error == nil else {
-                centralManager.eventHandler?(Event.error(ErrorCode.peripheral("Cannot discover peripheral \(peripheral.name)'s services", peripheral, error)))
+                centralManager.sendEvent(Event.error(ErrorCode.peripheral("Cannot discover peripheral \(peripheral.name)'s services", peripheral, error)))
                 return
             }
             
             guard !peripheral.servicesDiscovered else {
-                centralManager.eventHandler?(Event.error(ErrorCode.internalError("Peripheral \(peripheral.name)'s services were rediscovered???")))
+                centralManager.sendEvent(Event.error(ErrorCode.internalError("Peripheral \(peripheral.name)'s services were rediscovered???")))
                 return
             }
             
             if let cbServices = cbPeripheral.services, cbServices.count > 0 {
                 for cbService in cbServices {
                     guard let id = centralManager.subscription.match(cbService) else {
-                        centralManager.eventHandler?(Event.error(ErrorCode.internalError("didDiscoverServices reported a service [\(cbService)] that does not match the subscription???")))
+                        centralManager.sendEvent(Event.error(ErrorCode.internalError("didDiscoverServices reported a service [\(cbService)] that does not match the subscription???")))
                         continue
                     }
                     
@@ -49,29 +49,29 @@ extension CentralManager {
                 }
             }
             else if !centralManager.subscription.services.isEmpty {
-                centralManager.eventHandler?(Event.error(ErrorCode.internalError("The peripheral subscription specifies services but didDiscoverServices reported 0 services???")))
+                centralManager.sendEvent(Event.error(ErrorCode.internalError("The peripheral subscription specifies services but didDiscoverServices reported 0 services???")))
             }
             
             peripheral.servicesDiscovered = true
             
             if peripheral.discoveryCompleted {
-                centralManager.eventHandler?(Event.peripheralReady(peripheral))
+                centralManager.sendEvent(Event.peripheralReady(peripheral))
             }
         }
         
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didDiscoverCharacteristicsFor cbService: CBService, error: Error?) {
             guard let service = peripheral[cbService] else {
-                centralManager.eventHandler?(Event.error(ErrorCode.internalError("Characteristics were reported for an unrecognized service: \(cbService)???")))
+                centralManager.sendEvent(Event.error(ErrorCode.internalError("Characteristics were reported for an unrecognized service: \(cbService)???")))
                 return
             }
             
             guard error == nil else {
-                centralManager.eventHandler?(Event.error(ErrorCode.service("Cannot discover service \(service.name)'s characteristics", service, error)))
+                centralManager.sendEvent(Event.error(ErrorCode.service("Cannot discover service \(service.name)'s characteristics", service, error)))
                 return
             }
             
             guard !service.characteristicsDiscovered else {
-                centralManager.eventHandler?(Event.error(ErrorCode.internalError("Service \(service.name)'s characteristics were rediscovered???")))
+                centralManager.sendEvent(Event.error(ErrorCode.internalError("Service \(service.name)'s characteristics were rediscovered???")))
                 return
             }
             
@@ -79,7 +79,7 @@ extension CentralManager {
                 for cbCharacteristic in cbCharacteristics {
                     
                     guard let id = centralManager.subscription.match(cbCharacteristic, of: cbService) else {
-                        centralManager.eventHandler?(Event.error(ErrorCode.internalError("didDiscoverCharacteristicsFor reported a characteristic [\(cbCharacteristic)] that does not match the subscription???")))
+                        centralManager.sendEvent(Event.error(ErrorCode.internalError("didDiscoverCharacteristicsFor reported a characteristic [\(cbCharacteristic)] that does not match the subscription???")))
                         continue
                     }
                     
@@ -98,29 +98,29 @@ extension CentralManager {
                 }
             }
             else if let serviceSubscription = centralManager.subscription[cbService], !serviceSubscription.characteristics.isEmpty {
-                centralManager.eventHandler?(CentralManager.Event.error(CentralManager.ErrorCode.internalError("The service subscription specifies characteristics but didDiscoverCharacteristicsFor reported 0 characteristics???")))
+                centralManager.sendEvent(CentralManager.Event.error(CentralManager.ErrorCode.internalError("The service subscription specifies characteristics but didDiscoverCharacteristicsFor reported 0 characteristics???")))
             }
             
             service.characteristicsDiscovered = true
             
             if peripheral.discoveryCompleted {
-                centralManager.eventHandler?(Event.peripheralReady(peripheral))
+                centralManager.sendEvent(Event.peripheralReady(peripheral))
             }
         }
         
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didDiscoverDescriptorsFor cbCharacteristic: CBCharacteristic, error: Error?) {
             guard let characteristic = peripheral[cbCharacteristic.service]?[cbCharacteristic] else {
-                centralManager.eventHandler?(Event.error(ErrorCode.internalError("Descriptors were reported for an unrecognized characteristic: \(cbCharacteristic)???")))
+                centralManager.sendEvent(Event.error(ErrorCode.internalError("Descriptors were reported for an unrecognized characteristic: \(cbCharacteristic)???")))
                 return
             }
             
             guard error == nil else {
-                centralManager.eventHandler?(Event.error(ErrorCode.characteristic("Cannot discover characteristic \(characteristic.name)'s descriptors", characteristic, error)))
+                centralManager.sendEvent(Event.error(ErrorCode.characteristic("Cannot discover characteristic \(characteristic.name)'s descriptors", characteristic, error)))
                 return
             }
             
             guard !characteristic.descriptorsDiscovered else {
-                centralManager.eventHandler?(Event.error(ErrorCode.internalError("Characteristic \(characteristic.name)'s descriptors were rediscovered???")))
+                centralManager.sendEvent(Event.error(ErrorCode.internalError("Characteristic \(characteristic.name)'s descriptors were rediscovered???")))
                 return
             }
             
@@ -135,7 +135,7 @@ extension CentralManager {
             characteristic.descriptorsDiscovered = true
             
             if peripheral.discoveryCompleted {
-                centralManager.eventHandler?(Event.peripheralReady(peripheral))
+                centralManager.sendEvent(Event.peripheralReady(peripheral))
             }
         }
         
@@ -143,7 +143,7 @@ extension CentralManager {
 
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didUpdateValueFor cbCharacteristic: CBCharacteristic, error: Error?) {
             guard let characteristic = peripheral[cbCharacteristic.service]?[cbCharacteristic] else {
-                centralManager.eventHandler?(Event.error(ErrorCode.internalError("Cannot find the characteristic corresponding to: \(cbCharacteristic)???")))
+                centralManager.sendEvent(Event.error(ErrorCode.internalError("Cannot find the characteristic corresponding to: \(cbCharacteristic)???")))
                 return
             }
             
@@ -152,7 +152,7 @@ extension CentralManager {
         
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didWriteValueFor cbCharacteristic: CBCharacteristic, error: Error?) {
             guard let characteristic = peripheral[cbCharacteristic.service]?[cbCharacteristic] else {
-                centralManager.eventHandler?(Event.error(ErrorCode.internalError("Cannot find the characteristic corresponding to: \(cbCharacteristic)???")))
+                centralManager.sendEvent(Event.error(ErrorCode.internalError("Cannot find the characteristic corresponding to: \(cbCharacteristic)???")))
                 return
             }
             
@@ -161,7 +161,7 @@ extension CentralManager {
         
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didUpdateNotificationStateFor cbCharacteristic: CBCharacteristic, error: Error?) {
             guard let characteristic = peripheral[cbCharacteristic.service]?[cbCharacteristic] else {
-                centralManager.eventHandler?(Event.error(ErrorCode.internalError("Cannot find the characteristic corresponding to: \(cbCharacteristic)???")))
+                centralManager.sendEvent(Event.error(ErrorCode.internalError("Cannot find the characteristic corresponding to: \(cbCharacteristic)???")))
                 return
             }
             
@@ -172,7 +172,7 @@ extension CentralManager {
 
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didUpdateValueFor cbDescriptor: CBDescriptor, error: Error?) {
             guard let descriptor = peripheral[cbDescriptor.characteristic.service]?[cbDescriptor.characteristic]?[cbDescriptor] else {
-                centralManager.eventHandler?(Event.error(ErrorCode.internalError("Cannot find the descriptor corresponding to: \(cbDescriptor)???")))
+                centralManager.sendEvent(Event.error(ErrorCode.internalError("Cannot find the descriptor corresponding to: \(cbDescriptor)???")))
                 return
             }
             
@@ -181,7 +181,7 @@ extension CentralManager {
         
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didWriteValueFor cbDescriptor: CBDescriptor, error: Error?) {
             guard let descriptor = peripheral[cbDescriptor.characteristic.service]?[cbDescriptor.characteristic]?[cbDescriptor] else {
-                centralManager.eventHandler?(Event.error(ErrorCode.internalError("Cannot find the descriptor corresponding to: \(cbDescriptor)???")))
+                centralManager.sendEvent(Event.error(ErrorCode.internalError("Cannot find the descriptor corresponding to: \(cbDescriptor)???")))
                 return
             }
             
