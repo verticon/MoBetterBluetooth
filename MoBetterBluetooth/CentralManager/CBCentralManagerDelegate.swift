@@ -30,7 +30,7 @@ extension CentralManager {
             
             switch manager.state {
             case CBManagerState.poweredOn:
-                centralManager.ready = true
+                centralManager.isReady = true
                 centralManager.sendEvent(Event.managerReady())
                 
             case CBManagerState.poweredOff:
@@ -78,7 +78,7 @@ extension CentralManager {
             let key = getKey(for: cbPeripheral)
             
             if let peripheralDelegate = discoveredPeripherals[key] {
-                centralManager.sendEvent(Event.error(ErrorCode.internalError("Peripheral \(peripheralDelegate.peripheral.name) was rediscovered???")))
+                centralManager.sendEvent(Event.error(ErrorCode.internalError("Peripheral \(peripheralDelegate.peripheral.name) was rediscovered???\n\(cbPeripheral)\n\(data)")))
                 return
             }
             

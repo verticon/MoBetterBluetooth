@@ -51,11 +51,9 @@ public class CentralManager {
     // If the subscription is empty then the Central Manager will report any and all peripherals;
     // else the Central Manager will only report those peripherals that provide the specified services.
     public init(subscription: PeripheralSubscription, factory: CentralManagerTypesFactory = DefaultFactory(), eventHandler: Event.Handler? = nil) {
-        ready = false
         self.factory = factory
         self.subscription = subscription
-
-        self.eventHandler = eventHandler // Do this last
+        self.eventHandler = eventHandler
     }
     
     public var name: String {
@@ -64,11 +62,19 @@ public class CentralManager {
         }
     }
 
-    public private(set) var subscription: PeripheralSubscription
+    public let subscription: PeripheralSubscription
     
-    public private(set) var factory: CentralManagerTypesFactory
+    public let factory: CentralManagerTypesFactory
     
-    public internal(set) var ready: Bool
+    public internal(set) var isReady = false
+    
+    public var isScanning : Bool {
+        get {
+            return cbManager?.isScanning ?? false
+        }
+    }
+    
+    public private(set) var peripherals = [Peripheral]()
 
     // Setting the event handler to nil will stop events from coming (they will be discarded)
     private var _eventHandler: Event.Handler?
@@ -87,9 +93,10 @@ public class CentralManager {
         }
     }
     
-    // Used internally by the delegates
-    func sendEvent(_ event: Event) {
+    internal func sendEvent(_ event: Event) {
         lockObject(self) {
+            if case let .peripheralReady(peripheral) = event { peripherals.append(peripheral) }
+
             if let handler = eventHandler {
                 handler(event)
             }
@@ -97,12 +104,12 @@ public class CentralManager {
     }
 
     public func startScanning() throws {
-        guard ready else { throw ErrorCode.notReady("Scanning may not be started until after the ready event has been delivered.") }
+        guard isReady else { throw ErrorCode.notReady("Scanning may not be started until after the ready event has been delivered.") }
         
         cbManager?.scanForPeripherals(withServices: subscription.getServiceUuids(), options: nil)
     }
 
     public func stopScanning() {
-        if let _ = cbManager?.isScanning { cbManager?.stopScan() }
+        if isScanning { cbManager?.stopScan() }
     }
 }
