@@ -1,6 +1,6 @@
 //
-//  Types
-//  Toolbox
+//  Factory
+//  MoBetterBluetooth
 //
 //  Created by Robert Vaessen on 10/30/16.
 //  Copyright © 2016 Robert Vaessen. All rights reserved.

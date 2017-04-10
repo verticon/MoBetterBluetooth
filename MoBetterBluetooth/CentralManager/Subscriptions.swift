@@ -66,7 +66,7 @@ extension CentralManager {
 
     public struct ServiceSubscription : Encodable {
         public let id: Identifier
-        public var characteristics: [CharacteristicSubscription] // If empty then all of the service's characteristics and descriptors will be discovered
+        public let characteristics: [CharacteristicSubscription] // If empty then all of the service's characteristics and descriptors will be discovered
         
         public init(id: Identifier, characteristics: [CharacteristicSubscription] = []) {
             self.id = id
@@ -115,27 +115,36 @@ extension CentralManager {
 
     public struct PeripheralSubscription : Encodable {
         public let name: String
-        public var services: [ServiceSubscription] // If empty then all of the peripheral's services, characteristics and descriptors will be discovered
+        public let services: [ServiceSubscription] // If empty then all of the peripheral's services, characteristics and descriptors will be discovered
+        public let autoConnect: Bool
+        public let autoDiscover: Bool // Services, characteristics and descriptors
    
-        public init(name: String, services: [ServiceSubscription] = []) {
+        public init(name: String, services: [ServiceSubscription] = [], autoConnect: Bool, autoDiscover: Bool) {
             self.name = name
             self.services = services
+            self.autoConnect = autoConnect
+            self.autoDiscover = autoDiscover
         }
         
         public init?(_ properties: Encodable.Properties?) {
             guard let properties = properties else { return nil }
             
             if  let name = properties["name"] as? String,
-                let services = properties["services"] as? [Encodable.Properties] {
+                let services = properties["services"] as? [Encodable.Properties],
+                let autoConnect = properties["autoConnect"] as? Bool,
+                let autoDiscover = properties["autoDiscover"] as? Bool {
                 self.name = name
                 self.services = services.decode(type: ServiceSubscription.self)
+                self.autoConnect = autoConnect
+                self.autoDiscover = autoDiscover
+
             } else {
                 return nil
             }
         }
         
         public func encode() -> Encodable.Properties {
-            return ["name": name, "services": services.encode()]
+            return ["name": name, "services" : services.encode(), "autoConnect" : autoConnect, "autoDiscover" :  autoDiscover]
         }
         
         subscript(serviceId: CBUUID) -> ServiceSubscription? {

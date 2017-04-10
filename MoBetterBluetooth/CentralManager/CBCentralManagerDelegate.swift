@@ -12,13 +12,9 @@ import CoreBluetooth
 extension CentralManager {
     class CentralManagerDelegate : NSObject, CBCentralManagerDelegate {
 
-        private let centralManager: CentralManager
+        internal var centralManager: CentralManager! = nil // The CentralManager initializes it
         private var discoveredPeripherals = [String : PeripheralDelegate]()
-        
-        init(centralManager: CentralManager) {
-            self.centralManager = centralManager
-        }
-        
+
         // This method is invoked when the CentralManager's delegate is set. It is also invoked whenever the Settings app is used to turn Bluetooth On/Off.
         // If the app is in the foreground and bluetooth is turned On/Off then the invocation occurs immediately. If the app is in the
         // background then the timing of the invocation is determined by the Background Mode setting "Uses Bluetooth LE accessories". If
@@ -30,8 +26,7 @@ extension CentralManager {
             
             switch manager.state {
             case CBManagerState.poweredOn:
-                centralManager.isReady = true
-                centralManager.sendEvent(Event.managerReady())
+                centralManager.sendEvent(.managerReady(centralManager))
                 
             case CBManagerState.poweredOff:
                 /* We are not setting the CBCentralManagerState initialization option CBCentralManagerOptionShowPowerAlertKey
@@ -58,7 +53,7 @@ extension CentralManager {
                 break
                 
             case CBManagerState.unsupported:
-                centralManager.sendEvent(Event.error(ErrorCode.bleNotSupported))
+                centralManager.sendEvent(.error(.bleNotSupported))
                 break
             }
         }
@@ -77,21 +72,21 @@ extension CentralManager {
             
             let key = getKey(for: cbPeripheral)
             
-            if let peripheralDelegate = discoveredPeripherals[key] {
-                centralManager.sendEvent(Event.error(ErrorCode.internalError("Peripheral \(peripheralDelegate.peripheral.name) was rediscovered???\n\(cbPeripheral)\n\(data)")))
+            guard discoveredPeripherals[key] == nil else {
+                centralManager.sendEvent(.error(.peripheralRediscovered(cbPeripheral, advertisementData: data)))
                 return
             }
             
-            let peripheral = centralManager.factory.makePeripheral(for: cbPeripheral, advertisementData: data as [String : AnyObject], signalStrength: signalStrength)
+            let peripheral = centralManager.factory.makePeripheral(for: cbPeripheral, manager: centralManager, advertisementData: data, signalStrength: signalStrength)
             let delegate = PeripheralDelegate(centralManager: centralManager, peripheral: peripheral)
             self.discoveredPeripherals[key] = delegate
             cbPeripheral.delegate = delegate
             
-            if isConnectable(data as [String : AnyObject]) {
+            if centralManager.subscription.autoConnect && peripheral.connectable {
                 manager.connect(cbPeripheral, options: nil)
             }
             else {
-                centralManager.sendEvent(Event.peripheralReady(peripheral))
+                centralManager.sendEvent(.peripheralReady(peripheral))
                 
                 // TODO: Revisit the scenario of a non Apple beacon
                 /*
@@ -107,22 +102,52 @@ extension CentralManager {
         }
         
         @objc func centralManager(_ manager: CBCentralManager, didConnect cbPeripheral: CBPeripheral) {
-            let serviceUuids = centralManager.subscription.getServiceUuids()
-            cbPeripheral.discoverServices(serviceUuids)
+            let key = getKey(for: cbPeripheral)
+            guard let delegate = discoveredPeripherals[key] else {
+                centralManager.sendEvent(.error(.peripheralNotRecognized(cbPeripheral)))
+                return
+            }
+            let peripheral = delegate.peripheral
+
+            if let handler = peripheral.connectCompletionhandler {
+                handler(peripheral, .success)
+            }
+
+            if centralManager.subscription.autoDiscover {
+                let serviceUuids = centralManager.subscription.getServiceUuids()
+                peripheral.cbPeripheral.discoverServices(serviceUuids)
+            }
+            else {
+                centralManager.sendEvent(.peripheralReady(peripheral))
+            }
         }
         
         @objc func centralManager(_ manager: CBCentralManager, didFailToConnect cbPeripheral: CBPeripheral, error: Error?) {
             let key = getKey(for: cbPeripheral)
-            let delegate = discoveredPeripherals[key]!
-            let theError = ErrorCode.peripheral("Failed to connect to the peripheral \(delegate.peripheral.name)", delegate.peripheral, error)
-            centralManager.sendEvent(Event.error(theError))
+            guard let delegate = discoveredPeripherals[key] else {
+                centralManager.sendEvent(.error(.peripheralNotRecognized(cbPeripheral)))
+                return
+            }
+            let peripheral = delegate.peripheral
+
+            let error = CentralManagerError.peripheralFailedToConnect(peripheral, cbError: error)
+            
+            if let handler = peripheral.connectCompletionhandler {
+                handler(peripheral, .failure(error))
+            }
+            
+            centralManager.sendEvent(.error(error))
         }
         
         // TODO: Cleanup? From the Apple documentation: Note that when a peripheral is disconnected, all of its services, characteristics, and characteristic descriptors are invalidated.
         @objc func centralManager(_ manager: CBCentralManager, didDisconnectPeripheral cbPeripheral: CBPeripheral, error: Error?) {
             let key = getKey(for: cbPeripheral)
-            let delegate = discoveredPeripherals[key]!
-            centralManager.sendEvent(Event.peripheralDisconnected((peripheral: delegate.peripheral, coreBluetoothError: error)))
+            guard let delegate = discoveredPeripherals[key] else {
+                centralManager.sendEvent(.error(.peripheralNotRecognized(cbPeripheral)))
+                return
+            }
+
+            centralManager.sendEvent(.peripheralDisconnected((delegate.peripheral, coreBluetoothError: error)))
         }
         
         func getKey(for cbPeripheral: CBPeripheral) -> String {

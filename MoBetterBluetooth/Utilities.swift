@@ -62,7 +62,7 @@ public func decodeManufacturerSpecificData(advertisementData data: [String : Any
     return nil
 }
 
-public func isConnectable(_ advertisementData: [String : AnyObject]) -> Bool {
+public func isConnectable(_ advertisementData: [String : Any]) -> Bool {
     if let isConnectable = advertisementData[CBAdvertisementDataIsConnectable] as? Bool {
         return isConnectable
     }
@@ -85,6 +85,15 @@ public let CBUUIDSoftwareRevisionCharacteristicString = "2A28"
 public let SoftwareRevisionCharacteristicUUID = CBUUID(string: CBUUIDSoftwareRevisionCharacteristicString)
 public let CBUUIDManufacturerNameCharacteristicString = "2A29"
 public let ManufacturerNameCharacteristicUUID = CBUUID(string: CBUUIDManufacturerNameCharacteristicString)
+public let CBUUIDPnPIDCharacteristicString = "2A50"
+public let PnPIDCharacteristicUUID = CBUUID(string: CBUUIDPnPIDCharacteristicString)
+
+public let CBUUIDCurrentTimeServiceString = "1805"
+public let CurrentTimeServiceUUID = CBUUID(string: CBUUIDCurrentTimeServiceString)
+public let CBUUIDCurrentTimeCharacteristicString = "2A2B"
+public let CurrentTimeCharacteristicUUID = CBUUID(string: CBUUIDCurrentTimeCharacteristicString)
+public let CBUUIDLocalTimeCharacteristicString = "2A0F"
+public let LocalTimeCharacteristicUUID = CBUUID(string: CBUUIDLocalTimeCharacteristicString)
 
 public let CBUUIDHeartRateServiceString = "180D"
 public let HeartRateServiceUUID = CBUUID(string: CBUUIDHeartRateServiceString)
@@ -117,6 +126,10 @@ private let uuidMappings = [
     HardwareRevisionCharacteristicUUID : "Hardware Revision",
     SoftwareRevisionCharacteristicUUID : "Software Revision",
     ManufacturerNameCharacteristicUUID : "Manufacturer Name",
+
+    CurrentTimeServiceUUID : "Current Time",
+    CurrentTimeCharacteristicUUID : "Current Time",
+    LocalTimeCharacteristicUUID : "Local Time",
 
     HeartRateServiceUUID : "Heart Rate",
     HeartRateMeasurementCharacteristicUUID : "Heart Rate Measurement",

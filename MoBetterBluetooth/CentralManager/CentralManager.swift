@@ -12,48 +12,30 @@ import VerticonsToolbox
 
 /*
  *  1. Create a CentralManager
- *  2. Set the eventHandler - Doing this initiates checking if bluetooth is available and permissioned; culminating in the Ready event.
+ *  2. Set the eventHandler - Doing this initiates checking if bluetovar is available and permissioned; culminating in the Ready event.
  *  3. Call startScanning().
  */
-public class CentralManager {
 
-    // Types *********************************************************************************************************
-
-    public enum Event {
-        case managerReady() // The CentralManager is ready to scan for peripherals
-
-        case peripheralReady(Peripheral) // A peripheral that matches the subscription has been discovered and all of its matching services, characteristics and descriptors are in place
-        case peripheralDisconnected((peripheral: Peripheral, coreBluetoothError: Error?))
-
-        case error(ErrorCode)
-        
-        public typealias Handler = (_ event: Event) -> Void
-    }
-
-    public enum ErrorCode : Error {
-        case notReady(String)
-        case internalError(String)
-
-        case bleNotSupported
-        
-        case peripheral(String, Peripheral, Error?)
-        case service(String, Service, Error?)
-        case characteristic(String, Characteristic, Error?)
-    }
+public class CentralManager : Broadcaster<CentralManagerEvent> {
     
     private class DefaultFactory : CentralManagerTypesFactory {}
     
     // Instance Members **********************************************************************************************
 
-    private var cbManager: CBCentralManager?
-    private var cbManagerDelegate: CentralManagerDelegate? // We need to hang on to it because the CBCentralManager's delegate is a weak reference
+    internal var cbManager: CBCentralManager
+    private var cbManagerDelegate: CentralManagerDelegate // We need to hang on to it because the CBCentralManager's delegate is a weak reference
 
     // If the subscription is empty then the Central Manager will report any and all peripherals;
     // else the Central Manager will only report those peripherals that provide the specified services.
-    public init(subscription: PeripheralSubscription, factory: CentralManagerTypesFactory = DefaultFactory(), eventHandler: Event.Handler? = nil) {
+    public init(subscription: PeripheralSubscription, factory: CentralManagerTypesFactory = DefaultFactory()) {
         self.factory = factory
-        self.subscription = subscription
-        self.eventHandler = eventHandler
+        _subscription = subscription
+        cbManagerDelegate = CentralManagerDelegate()
+        cbManager = CBCentralManager(delegate: nil, queue: nil)
+        super.init()
+
+        cbManagerDelegate.centralManager = self
+        cbManager.delegate = cbManagerDelegate
     }
     
     public var name: String {
@@ -62,54 +44,65 @@ public class CentralManager {
         }
     }
 
-    public let subscription: PeripheralSubscription
-    
+    // Changing the subscription results in the current cbManager being discarded and a new one being created.
+    // This is done so as to discard any existing peripherals that might not match the new subscription. Is there a better way?
+    // It is up to the application to restart scanning, if desired, after receiving the new manager's ready event.
+    private var _subscription: PeripheralSubscription
+    public var subscription: PeripheralSubscription {
+        get {
+            return _subscription
+        }
+        set {
+            let _ = stopScanning()
+            peripherals.removeAll()
+            _subscription = newValue
+            cbManagerDelegate = CentralManagerDelegate()
+            cbManagerDelegate.centralManager = self
+            cbManager = CBCentralManager(delegate: cbManagerDelegate, queue: nil)
+        }
+    }
+
     public let factory: CentralManagerTypesFactory
     
-    public internal(set) var isReady = false
+    public var isReady: Bool {
+        get {
+            return cbManager.state == .poweredOn
+        }
+    }
     
     public var isScanning : Bool {
         get {
-            return cbManager?.isScanning ?? false
+            return cbManager.isScanning
         }
     }
     
     public private(set) var peripherals = [Peripheral]()
-
-    // Setting the event handler to nil will stop events from coming (they will be discarded)
-    private var _eventHandler: Event.Handler?
-    public var eventHandler: Event.Handler? {
-        get {
-            return _eventHandler
-        }
-        set {
-            lockObject(self) {
-                _eventHandler = newValue
-                if let _ = eventHandler, cbManager == nil { // Wait until we've got an event handler, else we're just "spinning our wheels".
-                    cbManagerDelegate = CentralManagerDelegate(centralManager: self)
-                    cbManager = CBCentralManager(delegate: cbManagerDelegate, queue: nil)
-                }
-            }
-        }
-    }
     
-    internal func sendEvent(_ event: Event) {
+    // TODO: Rethink the lock
+    internal func sendEvent(_ event: CentralManagerEvent) {
         lockObject(self) {
             if case let .peripheralReady(peripheral) = event { peripherals.append(peripheral) }
 
-            if let handler = eventHandler {
-                handler(event)
-            }
+            broadcast(event)
         }
     }
 
-    public func startScanning() throws {
-        guard isReady else { throw ErrorCode.notReady("Scanning may not be started until after the ready event has been delivered.") }
+    public func startScanning() -> CentralManagerStatus {
+        guard isReady else { return .failure(.notReady) }
         
-        cbManager?.scanForPeripherals(withServices: subscription.getServiceUuids(), options: nil)
+        cbManager.scanForPeripherals(withServices: subscription.getServiceUuids(), options: nil)
+        sendEvent(.managerStartedScanning(self))
+
+        return .success
     }
 
-    public func stopScanning() {
-        if isScanning { cbManager?.stopScan() }
+    // Return true(false) if the CB manager was(was not) scanning
+    public func stopScanning() -> Bool {
+        if !isScanning { return false }
+        
+        cbManager.stopScan()
+        sendEvent(.managerStoppedScanning(self))
+
+        return true
     }
 }
