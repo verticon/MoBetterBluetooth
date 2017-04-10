@@ -12,15 +12,15 @@ import VerticonsToolbox
 
 
 public protocol CentralManagerTypesFactory {
-    func makePeripheral(for cbPeripheral: CBPeripheral, advertisementData: [String : AnyObject], signalStrength: NSNumber) -> CentralManager.Peripheral
+    func makePeripheral(for cbPeripheral: CBPeripheral, manager: CentralManager, advertisementData: [String : Any], signalStrength: NSNumber) -> CentralManager.Peripheral
     func makeService(for cbService: CBService, id: CentralManager.Identifier, parent: CentralManager.Peripheral) -> CentralManager.Service
     func makeCharacteristic(for cbCharacteristic: CBCharacteristic, id: CentralManager.Identifier, parent: CentralManager.Service) -> CentralManager.Characteristic
     func makeDescriptor(for cbDescriptor: CBDescriptor, id: CentralManager.Identifier, parent: CentralManager.Characteristic) -> CentralManager.Descriptor
 }
 
 extension CentralManagerTypesFactory {
-    public func makePeripheral(for cbPeripheral: CBPeripheral, advertisementData: [String : AnyObject], signalStrength: NSNumber) -> CentralManager.Peripheral {
-        return CentralManager.Peripheral(cbPeripheral: cbPeripheral, advertisementData: advertisementData, signalStrength: signalStrength)
+    public func makePeripheral(for cbPeripheral: CBPeripheral, manager: CentralManager, advertisementData: [String : Any], signalStrength: NSNumber) -> CentralManager.Peripheral {
+        return CentralManager.Peripheral(cbPeripheral: cbPeripheral, manager: manager, advertisementData: advertisementData, signalStrength: signalStrength)
     }
     
     public func makeService(for cbService: CBService, id: CentralManager.Identifier, parent: CentralManager.Peripheral) -> CentralManager.Service {
@@ -40,17 +40,16 @@ extension CentralManager {
 
     open class Peripheral : CustomStringConvertible {
         
-        public let advertisementData: [String : AnyObject]
-        public let signalStrength: NSNumber
         public let cbPeripheral: CBPeripheral
-        public var services = [Service]()
+        public let manager: CentralManager
+        public let advertisementData: [String : Any]
+        public internal(set) var services = [Service]()
 
-        var servicesDiscovered = false
 
-        public init(cbPeripheral: CBPeripheral, advertisementData: [String : AnyObject], signalStrength: NSNumber) {
+        public init(cbPeripheral: CBPeripheral, manager: CentralManager, advertisementData: [String : Any], signalStrength: NSNumber) {
             self.cbPeripheral = cbPeripheral
+            self.manager = manager
             self.advertisementData = advertisementData
-            self.signalStrength = signalStrength
         }
 
         public var name: String {
@@ -58,20 +57,39 @@ extension CentralManager {
         }
 
         public var description : String {
-            var description = "\(name) \(cbPeripheral)\nRSSI = \(signalStrength)\nAdvertisement Data:\n"
+            var description = "\(cbPeripheral)\n"
+            
+            description += "Advertisement Data:\n"
             for entry in advertisementData {
                 let value = "\(entry.1)".replacingOccurrences(of: "\n", with: "\n\t") // When the value is an array the default string interpolation is not pretty
                 description += "\t\(entry.0) = \(value)\n"
             }
-            description += "Services:\(services.count < 1 ? " <there are no services>" : "")\n"
+
+            description += "Services:\n"
             for service in services {
                 description += increaseIndent("\(service)")
             }
+
             return description
         }
         
         public var connectable: Bool {
             return isConnectable(advertisementData)
+        }
+        
+        public var disconnected: Bool {
+            return cbPeripheral.state == .disconnected
+        }
+        
+        internal var connectCompletionhandler: ((Peripheral, CentralManagerStatus) -> Void)?
+        public func connect(completionhandler: @escaping (Peripheral, CentralManagerStatus) -> Void) -> CentralManagerStatus {
+            guard connectable else {  return .failure(.notConnectable) }
+            guard disconnected else {  return .failure(.notDisconnected) }
+            
+            connectCompletionhandler = completionhandler
+            manager.cbManager.connect(cbPeripheral, options: nil)
+            
+            return .success
         }
 
         public subscript(serviceId: Identifier) -> Service? {
@@ -87,6 +105,7 @@ extension CentralManager {
             return self[cbService.uuid]
         }
         
+        var servicesDiscovered = false
         var discoveryCompleted: Bool {
             return services.reduce(servicesDiscovered, { $0 && $1.discoveryCompleted })
         }
@@ -97,7 +116,7 @@ extension CentralManager {
         public let id: Identifier
         public let cbService: CBService
         public let parent: Peripheral
-        public var characteristics = [Characteristic]()
+        public internal(set) var characteristics = [Characteristic]()
 
         var characteristicsDiscovered = false
 
@@ -110,7 +129,7 @@ extension CentralManager {
         public var name: String { return id.name ?? id.uuid.uuidString }
 
         public var description : String {
-            var description = "\(name) \(cbService) has \(characteristics.count) characteristics\n"
+            var description = "\(cbService) has \(characteristics.count) characteristics\n"
             for characteristic in characteristics {
                 description += increaseIndent("\(characteristic)")
             }
@@ -140,7 +159,7 @@ extension CentralManager {
         public let id: Identifier
         public let cbCharacteristic : CBCharacteristic
         public let parent: Service
-        public var descriptors = [Descriptor]()
+        public internal(set) var descriptors = [Descriptor]()
 
         var descriptorsDiscovered = false
         
@@ -153,7 +172,7 @@ extension CentralManager {
         public var name: String { return id.name ?? id.uuid.uuidString }
         
         public var description : String {
-            return "\(name) \(cbCharacteristic)\n"
+            return "\(cbCharacteristic) has \(descriptors.count) descriptors\n"
         }
         
         public subscript(descriptorId: Identifier) -> Descriptor? {
@@ -177,8 +196,9 @@ extension CentralManager {
 
         public enum ReadResult {
             case success(Data)
-            case failure(ErrorCode)
+            case failure(CentralManagerError)
         }
+
         public typealias ReadCompletionHandler = (ReadResult) -> Void
         private var readCompletionHandler: ReadCompletionHandler?
         
@@ -186,14 +206,16 @@ extension CentralManager {
             return cbCharacteristic.properties.contains(CBCharacteristicProperties.read)
         }
         
-        public func read(_ completionHandler: @escaping ReadCompletionHandler) throws {
-            guard readable else { throw ErrorCode.characteristic("Not Readable", self, nil) }
+        public func read(_ completionHandler: @escaping ReadCompletionHandler) -> CentralManagerStatus {
+            guard readable else { return .failure(.notReadable(self)) }
 
-            guard readCompletionHandler == nil else { throw ErrorCode.characteristic("Read In Progress", self, nil) }
+            guard readCompletionHandler == nil else { return .failure(.readInProgress(self)) }
 
             readCompletionHandler = completionHandler
 
             parent.parent.cbPeripheral.readValue(for: cbCharacteristic)
+
+            return .success
         }
         
         // The Central Manager will call this method when an asynchronous read has completed.
@@ -202,15 +224,14 @@ extension CentralManager {
         // I wish that there were a way to distingush read completion from notification.
         open func readCompleted(_ value : Data?, cbError: Error?) {
             guard readCompletionHandler != nil || notificationHandler != nil else {
-                print("Read completed method invoked but both completion handlers are nil???")
-                return
+                fatalError("Read completed method invoked but both completion handlers are nil???")
             }
             
             let result: ReadResult
             if let error = cbError {
-                result = ReadResult.failure(.characteristic("Core Bluetooth Read Error", self, error))
+                result = .failure(.readError(self, cbError: error))
             } else {
-                result = ReadResult.success(value!)
+                result = .success(value!)
             }
 
             if let handler = readCompletionHandler {
@@ -225,38 +246,35 @@ extension CentralManager {
         
         // ************************** Writing ******************************
         
-        public enum WriteResult {
-            case success
-            case failure(ErrorCode)
-        }
-        public typealias WriteCompletionHandler = (WriteResult) -> Void
+        public typealias WriteCompletionHandler = (CentralManagerStatus) -> Void
         private var writeCompletionHandler: WriteCompletionHandler?
 
         public var writeable : Bool {
             return cbCharacteristic.properties.contains(CBCharacteristicProperties.write)
         }
         
-        public func write(_ value: Data, completionHandler: @escaping WriteCompletionHandler) throws {
-            guard writeable else { throw ErrorCode.characteristic("Not Writeable", self, nil) }
+        public func write(_ value: Data, completionHandler: @escaping WriteCompletionHandler) -> CentralManagerStatus {
+            guard writeable else { return .failure(.notWriteable(self)) }
             
-            guard writeCompletionHandler == nil else { throw ErrorCode.characteristic("Write In Progress", self, nil) }
+            guard writeCompletionHandler == nil else { return .failure(.writeInProgress(self)) }
             
             writeCompletionHandler = completionHandler
 
             parent.parent.cbPeripheral.writeValue(value, for: cbCharacteristic, type: CBCharacteristicWriteType.withResponse)
+
+            return .success
         }
         
         // The Central Manager will call this method when the asynchronous write has completed.
         open func writeCompleted(cbError: Error?) {
             guard let handler = writeCompletionHandler else {
-                print("Write completed method invoked but completion handler is nil???")
-                return
+                fatalError("Write completed method invoked but completion handler is nil???")
             }
 
             writeCompletionHandler = nil // Do this first so that the handler can initiate a new write if desired.
             
             if let error = cbError {
-                handler(.failure(.characteristic("Core Bluetooth Write Error", self, error)))
+                handler(.failure(.writeError(self, cbError: error)))
             }
             else {
                 handler(.success)
@@ -272,23 +290,25 @@ extension CentralManager {
         }
         
         // If enabled is true then handler must not be nil
-        public func notify(enabled: Bool, handler: ReadCompletionHandler?) throws {
-            guard notifiable else { throw ErrorCode.characteristic("Not Notifiable", self, nil) }
+        public func notify(enabled: Bool, handler: ReadCompletionHandler?) -> CentralManagerStatus {
+            guard notifiable else { return .failure(.notNotifiable(self)) }
 
             if enabled && handler == nil {
-                throw ErrorCode.characteristic("Cannot notify with a nil handler", self, nil)
+                return .failure(.nilNotificationHandler(self))
             }
             
             notificationHandler = handler
 
             parent.parent.cbPeripheral.setNotifyValue(enabled, for: cbCharacteristic)
+            
+            return .success
         }
         
         // The Central Manager will call this method when the asynchronous notification state update has completed.
         // User types should override this method.
         open func setNotificationStateCompleted(value: Bool, cbError: Error?) {
             if let error = cbError {
-                print("Error updating the \(name) characteristic's notification state: \(error)")
+                notificationHandler!(.failure(.cannotNotify(self, cbError: error)))
             }
         }
     }
