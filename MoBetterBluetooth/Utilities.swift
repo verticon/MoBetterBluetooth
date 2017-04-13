@@ -54,6 +54,15 @@ public func nameForCBManagerState(_ state: CBManagerState) -> String {
     }
 }
 
+public func nameForPeripheralState(_ state: CBPeripheralState) -> String {
+    switch state {
+    case CBPeripheralState.connecting: return "Connecting"
+    case CBPeripheralState.connected: return "Connected"
+    case CBPeripheralState.disconnecting: return "Disconnecting"
+    case CBPeripheralState.disconnected: return "Disconnected"
+    }
+}
+
 public func decodeManufacturerSpecificData(advertisementData data: [String : AnyObject]) -> [String]? {
     if let manufacturerData = data[CBAdvertisementDataManufacturerDataKey] as? Data {
         let skipManufacturerId = manufacturerData.subdata(in: 2..<(manufacturerData.count - 2))

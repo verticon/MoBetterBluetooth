@@ -8,8 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		E102AC711E60518B0080A5F1 /* VerticonsToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E102AC701E6051610080A5F1 /* VerticonsToolbox.framework */; };
-		E10E23FA1E9C19CC00F27B67 /* CentralManagerError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10E23F71E9C19CC00F27B67 /* CentralManagerError.swift */; };
-		E10E23FB1E9C19CC00F27B67 /* CentralManagerEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10E23F81E9C19CC00F27B67 /* CentralManagerEvent.swift */; };
+		E10E23FA1E9C19CC00F27B67 /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10E23F71E9C19CC00F27B67 /* Errors.swift */; };
+		E10E23FB1E9C19CC00F27B67 /* Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10E23F81E9C19CC00F27B67 /* Events.swift */; };
 		E10E23FC1E9C19CC00F27B67 /* CentralManagerStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10E23F91E9C19CC00F27B67 /* CentralManagerStatus.swift */; };
 		E1B761E51E5DB07C00B01E19 /* MoBetterBluetooth.h in Headers */ = {isa = PBXBuildFile; fileRef = E1B761E31E5DB07C00B01E19 /* MoBetterBluetooth.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E1B761ED1E5DB57E00B01E19 /* BeaconRegion.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B761EB1E5DB57E00B01E19 /* BeaconRegion.swift */; };
@@ -40,8 +40,8 @@
 
 /* Begin PBXFileReference section */
 		E102AC6B1E6051610080A5F1 /* VerticonsToolbox.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = VerticonsToolbox.xcodeproj; path = Carthage/Checkouts/VerticonsToolbox/VerticonsToolbox.xcodeproj; sourceTree = "<group>"; };
-		E10E23F71E9C19CC00F27B67 /* CentralManagerError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = CentralManagerError.swift; path = CentralManager/CentralManagerError.swift; sourceTree = "<group>"; };
-		E10E23F81E9C19CC00F27B67 /* CentralManagerEvent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = CentralManagerEvent.swift; path = CentralManager/CentralManagerEvent.swift; sourceTree = "<group>"; };
+		E10E23F71E9C19CC00F27B67 /* Errors.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Errors.swift; path = CentralManager/Errors.swift; sourceTree = "<group>"; };
+		E10E23F81E9C19CC00F27B67 /* Events.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Events.swift; path = CentralManager/Events.swift; sourceTree = "<group>"; };
 		E10E23F91E9C19CC00F27B67 /* CentralManagerStatus.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = CentralManagerStatus.swift; path = CentralManager/CentralManagerStatus.swift; sourceTree = "<group>"; };
 		E1B761E01E5DB07C00B01E19 /* MoBetterBluetooth.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MoBetterBluetooth.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1B761E31E5DB07C00B01E19 /* MoBetterBluetooth.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MoBetterBluetooth.h; sourceTree = "<group>"; };
@@ -107,8 +107,8 @@
 		E1B761EF1E5DB5BF00B01E19 /* CentralManager */ = {
 			isa = PBXGroup;
 			children = (
-				E10E23F71E9C19CC00F27B67 /* CentralManagerError.swift */,
-				E10E23F81E9C19CC00F27B67 /* CentralManagerEvent.swift */,
+				E10E23F71E9C19CC00F27B67 /* Errors.swift */,
+				E10E23F81E9C19CC00F27B67 /* Events.swift */,
 				E10E23F91E9C19CC00F27B67 /* CentralManagerStatus.swift */,
 				E1B761F01E5DB5DA00B01E19 /* CBCentralManagerDelegate.swift */,
 				E1B761F11E5DB5DA00B01E19 /* CBPeripheralDelegate.swift */,
@@ -218,10 +218,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1B761F81E5DB5DA00B01E19 /* Subscriptions.swift in Sources */,
-				E10E23FB1E9C19CC00F27B67 /* CentralManagerEvent.swift in Sources */,
+				E10E23FB1E9C19CC00F27B67 /* Events.swift in Sources */,
 				E1B761EE1E5DB57E00B01E19 /* Utilities.swift in Sources */,
 				E10E23FC1E9C19CC00F27B67 /* CentralManagerStatus.swift in Sources */,
-				E10E23FA1E9C19CC00F27B67 /* CentralManagerError.swift in Sources */,
+				E10E23FA1E9C19CC00F27B67 /* Errors.swift in Sources */,
 				E1B761F61E5DB5DA00B01E19 /* CBPeripheralDelegate.swift in Sources */,
 				E1B761F91E5DB5DA00B01E19 /* Factory.swift in Sources */,
 				E1B761ED1E5DB57E00B01E19 /* BeaconRegion.swift in Sources */,

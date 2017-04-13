@@ -68,22 +68,24 @@ extension CentralManager {
         }
         
         @objc func centralManager(_ manager: CBCentralManager, didDiscover cbPeripheral: CBPeripheral, advertisementData data: [String : Any], rssi signalStrength: NSNumber) {
-            guard !blackListed(cbPeripheral.name) else { return }
-            
+
             let key = getKey(for: cbPeripheral)
             
             guard discoveredPeripherals[key] == nil else {
-                centralManager.sendEvent(.error(.peripheralRediscovered(cbPeripheral, advertisementData: data)))
+                centralManager.sendEvent(.peripheralRediscovered(cbPeripheral, advertisementData: data))
                 return
             }
             
-            let peripheral = centralManager.factory.makePeripheral(for: cbPeripheral, manager: centralManager, advertisementData: data, signalStrength: signalStrength)
+            let peripheral = centralManager.factory.makePeripheral(for: cbPeripheral, manager: centralManager, advertisementData: data)
             let delegate = PeripheralDelegate(centralManager: centralManager, peripheral: peripheral)
             self.discoveredPeripherals[key] = delegate
             cbPeripheral.delegate = delegate
             
+            centralManager.sendEvent(.peripheralDiscovered(peripheral, rssi: signalStrength))
+
             if centralManager.subscription.autoConnect && peripheral.connectable {
                 manager.connect(cbPeripheral, options: nil)
+                centralManager.sendEvent(.peripheralStateChange(peripheral)) // disconnected => connecting
             }
             else {
                 centralManager.sendEvent(.peripheralReady(peripheral))
@@ -110,6 +112,7 @@ extension CentralManager {
             let peripheral = delegate.peripheral
 
             if let handler = peripheral.connectCompletionhandler {
+                peripheral.connectCompletionhandler = nil
                 handler(peripheral, .success)
             }
 
@@ -120,6 +123,8 @@ extension CentralManager {
             else {
                 centralManager.sendEvent(.peripheralReady(peripheral))
             }
+
+            centralManager.sendEvent(.peripheralStateChange(delegate.peripheral)) // connecting => connected
         }
         
         @objc func centralManager(_ manager: CBCentralManager, didFailToConnect cbPeripheral: CBPeripheral, error: Error?) {
@@ -130,13 +135,16 @@ extension CentralManager {
             }
             let peripheral = delegate.peripheral
 
-            let error = CentralManagerError.peripheralFailedToConnect(peripheral, cbError: error)
+            let centralManagerError = CentralManagerError.peripheralFailedToConnect(peripheral, cbError: error)
             
             if let handler = peripheral.connectCompletionhandler {
-                handler(peripheral, .failure(error))
+                peripheral.connectCompletionhandler = nil
+                handler(peripheral, .failure(centralManagerError))
             }
             
-            centralManager.sendEvent(.error(error))
+            centralManager.sendEvent(.error(centralManagerError))
+
+            centralManager.sendEvent(.peripheralStateChange(delegate.peripheral)) // connecting => disconnected
         }
         
         // TODO: Cleanup? From the Apple documentation: Note that when a peripheral is disconnected, all of its services, characteristics, and characteristic descriptors are invalidated.
@@ -146,8 +154,25 @@ extension CentralManager {
                 centralManager.sendEvent(.error(.peripheralNotRecognized(cbPeripheral)))
                 return
             }
+            let peripheral = delegate.peripheral
 
-            centralManager.sendEvent(.peripheralDisconnected((delegate.peripheral, coreBluetoothError: error)))
+            // If there is a disconnect completion handler then we are here because a disconnect was requested.
+            // Else we are here because of an erroneous disconnection. What if we have both a handler AND an error?
+
+            if let handler = peripheral.disconnectCompletionhandler {
+                peripheral.disconnectCompletionhandler = nil
+                handler(peripheral, .success)
+                
+                if let cbError = error {
+                    print("didDisconnectPeripheral: We have both a disconnection handler AND an error (\(cbError))???")
+                }
+            }
+
+            if let error = error {
+                centralManager.sendEvent(.error(.peripheralDisconnected(peripheral, cbError: error)))
+            }
+
+            centralManager.sendEvent(.peripheralStateChange(delegate.peripheral)) // disconnecting => disconnected, or connected => disconnected
         }
         
         func getKey(for cbPeripheral: CBPeripheral) -> String {

@@ -12,15 +12,15 @@ import VerticonsToolbox
 
 
 public protocol CentralManagerTypesFactory {
-    func makePeripheral(for cbPeripheral: CBPeripheral, manager: CentralManager, advertisementData: [String : Any], signalStrength: NSNumber) -> CentralManager.Peripheral
+    func makePeripheral(for cbPeripheral: CBPeripheral, manager: CentralManager, advertisementData: [String : Any]) -> CentralManager.Peripheral
     func makeService(for cbService: CBService, id: CentralManager.Identifier, parent: CentralManager.Peripheral) -> CentralManager.Service
     func makeCharacteristic(for cbCharacteristic: CBCharacteristic, id: CentralManager.Identifier, parent: CentralManager.Service) -> CentralManager.Characteristic
     func makeDescriptor(for cbDescriptor: CBDescriptor, id: CentralManager.Identifier, parent: CentralManager.Characteristic) -> CentralManager.Descriptor
 }
 
 extension CentralManagerTypesFactory {
-    public func makePeripheral(for cbPeripheral: CBPeripheral, manager: CentralManager, advertisementData: [String : Any], signalStrength: NSNumber) -> CentralManager.Peripheral {
-        return CentralManager.Peripheral(cbPeripheral: cbPeripheral, manager: manager, advertisementData: advertisementData, signalStrength: signalStrength)
+    public func makePeripheral(for cbPeripheral: CBPeripheral, manager: CentralManager, advertisementData: [String : Any]) -> CentralManager.Peripheral {
+        return CentralManager.Peripheral(cbPeripheral: cbPeripheral, manager: manager, advertisementData: advertisementData)
     }
     
     public func makeService(for cbService: CBService, id: CentralManager.Identifier, parent: CentralManager.Peripheral) -> CentralManager.Service {
@@ -46,7 +46,7 @@ extension CentralManager {
         public internal(set) var services = [Service]()
 
 
-        public init(cbPeripheral: CBPeripheral, manager: CentralManager, advertisementData: [String : Any], signalStrength: NSNumber) {
+        public init(cbPeripheral: CBPeripheral, manager: CentralManager, advertisementData: [String : Any]) {
             self.cbPeripheral = cbPeripheral
             self.manager = manager
             self.advertisementData = advertisementData
@@ -64,10 +64,12 @@ extension CentralManager {
                 let value = "\(entry.1)".replacingOccurrences(of: "\n", with: "\n\t") // When the value is an array the default string interpolation is not pretty
                 description += "\t\(entry.0) = \(value)\n"
             }
-
-            description += "Services:\n"
-            for service in services {
-                description += increaseIndent("\(service)")
+            
+            if cbPeripheral.state == .connected {
+                description += "Services:\n"
+                for service in services {
+                    description += increaseIndent("\(service)")
+                }
             }
 
             return description
@@ -77,21 +79,31 @@ extension CentralManager {
             return isConnectable(advertisementData)
         }
         
-        public var disconnected: Bool {
-            return cbPeripheral.state == .disconnected
-        }
-        
         internal var connectCompletionhandler: ((Peripheral, CentralManagerStatus) -> Void)?
         public func connect(completionhandler: @escaping (Peripheral, CentralManagerStatus) -> Void) -> CentralManagerStatus {
             guard connectable else {  return .failure(.notConnectable) }
-            guard disconnected else {  return .failure(.notDisconnected) }
+            guard cbPeripheral.state == .disconnected else {  return .failure(.notDisconnected) }
             
             connectCompletionhandler = completionhandler
             manager.cbManager.connect(cbPeripheral, options: nil)
             
+            manager.sendEvent(.peripheralStateChange(self)) // disconnected => connecting
+
             return .success
         }
+        
+        internal var disconnectCompletionhandler: ((Peripheral, CentralManagerStatus) -> Void)?
+        public func disconnect(completionhandler: @escaping (Peripheral, CentralManagerStatus) -> Void) -> CentralManagerStatus {
+            guard cbPeripheral.state == .connected else {  return .failure(.notConnected) }
+            
+            disconnectCompletionhandler = completionhandler
+            manager.cbManager.cancelPeripheralConnection(cbPeripheral)
+            
+            manager.sendEvent(.peripheralStateChange(self)) // connected => disconnecting
 
+            return .success
+        }
+        
         public subscript(serviceId: Identifier) -> Service? {
             return self[serviceId.uuid]
         }

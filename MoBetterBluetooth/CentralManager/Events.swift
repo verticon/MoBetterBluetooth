@@ -24,9 +24,9 @@ public enum CentralManagerEvent {
     case error(CentralManagerError)
 }
 
-public enum PeripheralManagerEvent {
+public enum PeripheralEvent {
 
     case peripheralStateChange(CentralManager.Peripheral)
     
-    case error(CentralManagerError)
+    case error(PeripheralError)
 }

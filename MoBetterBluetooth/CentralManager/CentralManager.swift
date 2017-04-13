@@ -16,7 +16,7 @@ import VerticonsToolbox
  *  3. Call startScanning().
  */
 
-public class CentralManager : Broadcaster<CentralManagerEvent> {
+public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConvertible {
     
     private class DefaultFactory : CentralManagerTypesFactory {}
     
@@ -59,6 +59,7 @@ public class CentralManager : Broadcaster<CentralManagerEvent> {
             cbManagerDelegate = CentralManagerDelegate()
             cbManagerDelegate.centralManager = self
             cbManager = CBCentralManager(delegate: cbManagerDelegate, queue: nil)
+            sendEvent(.managerUpdatedSubscription(self))
         }
     }
 
@@ -78,20 +79,18 @@ public class CentralManager : Broadcaster<CentralManagerEvent> {
     
     public private(set) var peripherals = [Peripheral]()
     
-    // TODO: Rethink the lock
     internal func sendEvent(_ event: CentralManagerEvent) {
-        lockObject(self) {
-            if case let .peripheralReady(peripheral) = event { peripherals.append(peripheral) }
-
-            broadcast(event)
-        }
+        if case let .peripheralReady(peripheral) = event { peripherals.append(peripheral) }
+        
+        broadcast(event)
     }
 
     public func startScanning() -> CentralManagerStatus {
         guard isReady else { return .failure(.notReady) }
         
-        cbManager.scanForPeripherals(withServices: subscription.getServiceUuids(), options: nil)
-        sendEvent(.managerStartedScanning(self))
+        let serviceUuids = subscription.getServiceUuids()
+        cbManager.scanForPeripherals(withServices: serviceUuids, options: nil)
+        sendEvent(.managerStartedScanning(self, serviceUuids))
 
         return .success
     }
@@ -104,5 +103,9 @@ public class CentralManager : Broadcaster<CentralManagerEvent> {
         sendEvent(.managerStoppedScanning(self))
 
         return true
+    }
+
+    public var description : String {
+        return "\(name) \(cbManager)"
     }
 }

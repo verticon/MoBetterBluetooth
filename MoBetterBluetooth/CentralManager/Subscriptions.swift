@@ -113,6 +113,7 @@ extension CentralManager {
         }
     }
 
+    // TODO: Make the subscription CustomStringConvertible
     public struct PeripheralSubscription : Encodable {
         public let name: String
         public let services: [ServiceSubscription] // If empty then all of the peripheral's services, characteristics and descriptors will be discovered
