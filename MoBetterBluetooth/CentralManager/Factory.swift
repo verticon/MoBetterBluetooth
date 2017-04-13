@@ -38,12 +38,14 @@ extension CentralManagerTypesFactory {
 
 extension CentralManager {
 
-    open class Peripheral : CustomStringConvertible {
+    open class Peripheral : Broadcaster<PeripheralEvent>, CustomStringConvertible {
         
         public let cbPeripheral: CBPeripheral
         public let manager: CentralManager
         public let advertisementData: [String : Any]
         public internal(set) var services = [Service]()
+
+        var servicesDiscovered = false
 
 
         public init(cbPeripheral: CBPeripheral, manager: CentralManager, advertisementData: [String : Any]) {
@@ -80,28 +82,32 @@ extension CentralManager {
         }
         
         internal var connectCompletionhandler: ((Peripheral, CentralManagerStatus) -> Void)?
-        public func connect(completionhandler: @escaping (Peripheral, CentralManagerStatus) -> Void) -> CentralManagerStatus {
+        public func connect(completionhandler: @escaping (Peripheral, CentralManagerStatus) -> Void) -> PeripheralStatus {
             guard connectable else {  return .failure(.notConnectable) }
             guard cbPeripheral.state == .disconnected else {  return .failure(.notDisconnected) }
             
             connectCompletionhandler = completionhandler
             manager.cbManager.connect(cbPeripheral, options: nil)
             
-            manager.sendEvent(.peripheralStateChange(self)) // disconnected => connecting
+            sendEvent(.stateChanged(self)) // disconnected => connecting
 
             return .success
         }
         
         internal var disconnectCompletionhandler: ((Peripheral, CentralManagerStatus) -> Void)?
-        public func disconnect(completionhandler: @escaping (Peripheral, CentralManagerStatus) -> Void) -> CentralManagerStatus {
+        public func disconnect(completionhandler: @escaping (Peripheral, CentralManagerStatus) -> Void) -> PeripheralStatus {
             guard cbPeripheral.state == .connected else {  return .failure(.notConnected) }
             
             disconnectCompletionhandler = completionhandler
             manager.cbManager.cancelPeripheralConnection(cbPeripheral)
             
-            manager.sendEvent(.peripheralStateChange(self)) // connected => disconnecting
+            sendEvent(.stateChanged(self)) // connected => disconnecting
 
             return .success
+        }
+        
+        internal func sendEvent(_ event: PeripheralEvent) {
+            broadcast(event)
         }
         
         public subscript(serviceId: Identifier) -> Service? {
@@ -115,11 +121,6 @@ extension CentralManager {
         
         subscript(cbService: CBService) -> Service? {
             return self[cbService.uuid]
-        }
-        
-        var servicesDiscovered = false
-        var discoveryCompleted: Bool {
-            return services.reduce(servicesDiscovered, { $0 && $1.discoveryCompleted })
         }
     }
 
@@ -160,10 +161,6 @@ extension CentralManager {
         subscript(cbCharacteristic: CBCharacteristic) -> Characteristic? {
             return self[cbCharacteristic.uuid]
         }
-        
-        var discoveryCompleted: Bool {
-            return characteristics.reduce(characteristicsDiscovered, { $0 && $1.discoveryCompleted })
-        }
     }
 
     open class Characteristic : CustomStringConvertible {
@@ -200,15 +197,11 @@ extension CentralManager {
             return self[cbDescriptor.uuid]
         }
         
-        var discoveryCompleted: Bool {
-            return descriptorsDiscovered
-        }
-
         // ************************** Reading ******************************
 
         public enum ReadResult {
             case success(Data)
-            case failure(CentralManagerError)
+            case failure(PeripheralError)
         }
 
         public typealias ReadCompletionHandler = (ReadResult) -> Void
@@ -218,7 +211,7 @@ extension CentralManager {
             return cbCharacteristic.properties.contains(CBCharacteristicProperties.read)
         }
         
-        public func read(_ completionHandler: @escaping ReadCompletionHandler) -> CentralManagerStatus {
+        public func read(_ completionHandler: @escaping ReadCompletionHandler) -> PeripheralStatus {
             guard readable else { return .failure(.notReadable(self)) }
 
             guard readCompletionHandler == nil else { return .failure(.readInProgress(self)) }
@@ -258,14 +251,14 @@ extension CentralManager {
         
         // ************************** Writing ******************************
         
-        public typealias WriteCompletionHandler = (CentralManagerStatus) -> Void
+        public typealias WriteCompletionHandler = (PeripheralStatus) -> Void
         private var writeCompletionHandler: WriteCompletionHandler?
 
         public var writeable : Bool {
             return cbCharacteristic.properties.contains(CBCharacteristicProperties.write)
         }
         
-        public func write(_ value: Data, completionHandler: @escaping WriteCompletionHandler) -> CentralManagerStatus {
+        public func write(_ value: Data, completionHandler: @escaping WriteCompletionHandler) -> PeripheralStatus {
             guard writeable else { return .failure(.notWriteable(self)) }
             
             guard writeCompletionHandler == nil else { return .failure(.writeInProgress(self)) }
@@ -302,7 +295,7 @@ extension CentralManager {
         }
         
         // If enabled is true then handler must not be nil
-        public func notify(enabled: Bool, handler: ReadCompletionHandler?) -> CentralManagerStatus {
+        public func notify(enabled: Bool, handler: ReadCompletionHandler?) -> PeripheralStatus {
             guard notifiable else { return .failure(.notNotifiable(self)) }
 
             if enabled && handler == nil {

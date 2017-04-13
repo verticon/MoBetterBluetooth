@@ -11,22 +11,26 @@ import CoreBluetooth
 
 public enum CentralManagerEvent {
 
-    case managerReady(CentralManager) // The CentralManager is ready to scan for peripherals
-    case managerStartedScanning((CentralManager, [CBUUID]?))
-    case managerStoppedScanning(CentralManager)
-    case managerUpdatedSubscription(CentralManager)
+    case ready(CentralManager) // The CentralManager is ready to scan for peripherals
+
+    case startedScanning((CentralManager, [CBUUID]?))
+    case stoppedScanning(CentralManager)
+
+    case updatedSubscription(CentralManager)
     
-    case peripheralDiscovered((CentralManager.Peripheral, rssi: NSNumber))
-    case peripheralRediscovered(CBPeripheral, advertisementData: [String : Any])
-    case peripheralReady(CentralManager.Peripheral) // TODO: Consider getting rid of the peripheral ready event
-    case peripheralStateChange(CentralManager.Peripheral)
+    case discoveredPeripheral((CentralManager.Peripheral, rssi: NSNumber))
+    case rediscoveredPeripheral(CBPeripheral, advertisementData: [String : Any])
     
     case error(CentralManagerError)
 }
 
 public enum PeripheralEvent {
 
-    case peripheralStateChange(CentralManager.Peripheral)
+    case servicesDiscovered(CentralManager.Peripheral)
+    case characteristicsDiscovered(CentralManager.Service)
+    case descriptorsDiscovered(CentralManager.Characteristic)
+
+    case stateChanged(CentralManager.Peripheral)
     
     case error(PeripheralError)
 }

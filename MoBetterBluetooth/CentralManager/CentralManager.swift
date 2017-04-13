@@ -59,7 +59,7 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
             cbManagerDelegate = CentralManagerDelegate()
             cbManagerDelegate.centralManager = self
             cbManager = CBCentralManager(delegate: cbManagerDelegate, queue: nil)
-            sendEvent(.managerUpdatedSubscription(self))
+            sendEvent(.updatedSubscription(self))
         }
     }
 
@@ -80,7 +80,7 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
     public private(set) var peripherals = [Peripheral]()
     
     internal func sendEvent(_ event: CentralManagerEvent) {
-        if case let .peripheralReady(peripheral) = event { peripherals.append(peripheral) }
+        if case let .discoveredPeripheral((peripheral,_)) = event { peripherals.append(peripheral) }
         
         broadcast(event)
     }
@@ -90,7 +90,7 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
         
         let serviceUuids = subscription.getServiceUuids()
         cbManager.scanForPeripherals(withServices: serviceUuids, options: nil)
-        sendEvent(.managerStartedScanning(self, serviceUuids))
+        sendEvent(.startedScanning(self, serviceUuids))
 
         return .success
     }
@@ -100,7 +100,7 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
         if !isScanning { return false }
         
         cbManager.stopScan()
-        sendEvent(.managerStoppedScanning(self))
+        sendEvent(.stoppedScanning(self))
 
         return true
     }

@@ -12,3 +12,8 @@ public enum CentralManagerStatus {
     case success
     case failure(CentralManagerError)
 }
+
+public enum PeripheralStatus {
+    case success
+    case failure(PeripheralError)
+}

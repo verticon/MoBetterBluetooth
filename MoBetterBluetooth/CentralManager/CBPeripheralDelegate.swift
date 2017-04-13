@@ -25,55 +25,54 @@ extension CentralManager {
         // TODO: Handle secondary services
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didDiscoverServices error: Error?) {
             guard error == nil else {
-                centralManager.sendEvent(.error(.serviceDiscoveryError(peripheral, cbError: error!)))
+                peripheral.sendEvent(.error(.servicesDiscoveryError(peripheral, cbError: error!)))
                 return
             }
             
             guard !peripheral.servicesDiscovered else {
-                centralManager.sendEvent(.error(.serviceDiscoveryRepeated(peripheral)))
+                peripheral.sendEvent(.error(.servicesRediscovered(peripheral)))
                 return
             }
             
             if let cbServices = cbPeripheral.services, cbServices.count > 0 {
                 for cbService in cbServices {
                     guard let id = centralManager.subscription.match(cbService) else {
-                        centralManager.sendEvent(.error(.serviceDiscoverySubscriptionMismatch(peripheral, cbService)))
+                        peripheral.sendEvent(.error(.servicesDiscoverySubscriptionMismatch(peripheral, cbService)))
                         continue
                     }
                     
                     let service = centralManager.factory.makeService(for: cbService, id: id, parent: peripheral)
                     peripheral.services.append(service)
                     
-                    let characteristicUuids = centralManager.subscription[cbService]?.getCharacteristicUuids()
-                    cbPeripheral.discoverCharacteristics(characteristicUuids, for:cbService)
+                    if centralManager.subscription.autoDiscover {
+                        let characteristicUuids = centralManager.subscription[cbService]?.getCharacteristicUuids()
+                        cbPeripheral.discoverCharacteristics(characteristicUuids, for:cbService)
+                    }
                 }
             }
 
-            if peripheral.services.isEmpty {
-                centralManager.sendEvent(.error(.serviceDiscoveryNoServices(peripheral)))
-                return
-            }
-            
             peripheral.servicesDiscovered = true
-            
-            if peripheral.discoveryCompleted {
-                centralManager.sendEvent(.peripheralReady(peripheral))
+
+            peripheral.sendEvent(.servicesDiscovered(peripheral))
+
+            if peripheral.services.isEmpty {
+                peripheral.sendEvent(.error(.servicesDiscoveryNoServices(peripheral)))
             }
         }
         
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didDiscoverCharacteristicsFor cbService: CBService, error: Error?) {
             guard let service = peripheral[cbService] else {
-                centralManager.sendEvent(.error(.charactericticDiscoveryUnrecognizedService(peripheral, cbService)))
+                peripheral.sendEvent(.error(.charactericticsDiscoveryUnrecognizedService(peripheral, cbService)))
                 return
             }
             
             guard error == nil else {
-                centralManager.sendEvent(.error(.charactericticDiscoveryError(service, cbError: error!)))
+                peripheral.sendEvent(.error(.charactericticsDiscoveryError(service, cbError: error!)))
                 return
             }
             
             guard !service.characteristicsDiscovered else {
-                centralManager.sendEvent(.error(.characteristicDiscoveryRepeated(service)))
+                peripheral.sendEvent(.error(.characteristicsRediscovered(service)))
                 return
             }
             
@@ -81,50 +80,41 @@ extension CentralManager {
                 for cbCharacteristic in cbCharacteristics {
                     
                     guard let id = centralManager.subscription.match(cbCharacteristic, of: cbService) else {
-                        centralManager.sendEvent(.error(.characteristicDiscoverySubscriptionMismatch(service, cbCharacteristic)))
+                        peripheral.sendEvent(.error(.characteristicsDiscoverySubscriptionMismatch(service, cbCharacteristic)))
                         continue
                     }
                     
                     let characteristic = centralManager.factory.makeCharacteristic(for: cbCharacteristic, id: id, parent: service)
                     service.characteristics.append(characteristic)
                     
-                    var discoverDescriptors = true
-                    if let characteristicSubscription = centralManager.subscription[cbService]?[cbCharacteristic] {
-                        discoverDescriptors = characteristicSubscription.discoverDescriptors
-                    }
-                    if discoverDescriptors {
+                    if centralManager.subscription.autoDiscover {
                         cbPeripheral.discoverDescriptors(for: cbCharacteristic)
-                    } else {
-                        characteristic.descriptorsDiscovered = true
                     }
                 }
             }
 
-            if service.characteristics.isEmpty {
-                centralManager.sendEvent(.error(.characteristicDiscoveryNoCharacteristics(service)))
-                return
-            }
-            
             service.characteristicsDiscovered = true
-            
-            if peripheral.discoveryCompleted {
-                centralManager.sendEvent(.peripheralReady(peripheral))
+
+            peripheral.sendEvent(.characteristicsDiscovered(service))
+
+            if service.characteristics.isEmpty {
+                peripheral.sendEvent(.error(.characteristicsDiscoveryNoCharacteristics(service)))
             }
         }
         
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didDiscoverDescriptorsFor cbCharacteristic: CBCharacteristic, error: Error?) {
             guard let characteristic = peripheral[cbCharacteristic.service]?[cbCharacteristic] else {
-                centralManager.sendEvent(.error(.descriptorDiscoveryUnrecognizedCharacterictic(peripheral, cbCharacteristic)))
+                peripheral.sendEvent(.error(.descriptorsDiscoveryUnrecognizedCharacterictic(peripheral, cbCharacteristic)))
                 return
             }
             
             guard error == nil else {
-                centralManager.sendEvent(.error(.descriptorDiscoveryError(characteristic, cbError: error!)))
+                peripheral.sendEvent(.error(.descriptorsDiscoveryError(characteristic, cbError: error!)))
                 return
             }
             
             guard !characteristic.descriptorsDiscovered else {
-                centralManager.sendEvent(.error(.descriptorDiscoveryRepeated(characteristic)))
+                peripheral.sendEvent(.error(.descriptorsRediscovered(characteristic)))
                 return
             }
             
@@ -138,16 +128,14 @@ extension CentralManager {
             
             characteristic.descriptorsDiscovered = true
             
-            if peripheral.discoveryCompleted {
-                centralManager.sendEvent(.peripheralReady(peripheral))
-            }
+            peripheral.sendEvent(.descriptorsDiscovered(characteristic))
         }
         
         // Characteristic Read/Write/Notify **********************************************
 
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didUpdateValueFor cbCharacteristic: CBCharacteristic, error: Error?) {
             guard let characteristic = peripheral[cbCharacteristic.service]?[cbCharacteristic] else {
-                centralManager.sendEvent(.error(.updateValueUnrecognizedCharacterictic(peripheral, cbCharacteristic)))
+                peripheral.sendEvent(.error(.updateValueUnrecognizedCharacterictic(peripheral, cbCharacteristic)))
                 return
             }
             
@@ -156,7 +144,7 @@ extension CentralManager {
         
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didWriteValueFor cbCharacteristic: CBCharacteristic, error: Error?) {
             guard let characteristic = peripheral[cbCharacteristic.service]?[cbCharacteristic] else {
-                centralManager.sendEvent(.error(.writeValueUnrecognizedCharacterictic(peripheral, cbCharacteristic)))
+                peripheral.sendEvent(.error(.writeValueUnrecognizedCharacterictic(peripheral, cbCharacteristic)))
                 return
             }
             
@@ -165,7 +153,7 @@ extension CentralManager {
         
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didUpdateNotificationStateFor cbCharacteristic: CBCharacteristic, error: Error?) {
             guard let characteristic = peripheral[cbCharacteristic.service]?[cbCharacteristic] else {
-                centralManager.sendEvent(.error(.updateNotificationUnrecognizedCharacterictic(peripheral, cbCharacteristic)))
+                peripheral.sendEvent(.error(.updateNotificationUnrecognizedCharacterictic(peripheral, cbCharacteristic)))
                 return
             }
             
@@ -176,7 +164,7 @@ extension CentralManager {
 
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didUpdateValueFor cbDescriptor: CBDescriptor, error: Error?) {
             guard let descriptor = peripheral[cbDescriptor.characteristic.service]?[cbDescriptor.characteristic]?[cbDescriptor] else {
-                centralManager.sendEvent(.error(.updateValueUnrecognizedDescriptor(peripheral, cbDescriptor)))
+                peripheral.sendEvent(.error(.updateValueUnrecognizedDescriptor(peripheral, cbDescriptor)))
                 return
             }
             
@@ -185,7 +173,7 @@ extension CentralManager {
         
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didWriteValueFor cbDescriptor: CBDescriptor, error: Error?) {
             guard let descriptor = peripheral[cbDescriptor.characteristic.service]?[cbDescriptor.characteristic]?[cbDescriptor] else {
-                centralManager.sendEvent(.error(.writeValueUnrecognizedDescriptor(peripheral, cbDescriptor)))
+                peripheral.sendEvent(.error(.writeValueUnrecognizedDescriptor(peripheral, cbDescriptor)))
                 return
             }
             

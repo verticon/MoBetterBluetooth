@@ -12,31 +12,35 @@ import CoreBluetooth
 // The majority of these errors result from sanity checks performed by the delegates.
 // TODO: Consider whether some of the sanity checks should instead result in a fatal error.
 public enum CentralManagerError : Error {
+
     case notReady
     case bleNotSupported
-    
-    case notConnectable
-    case notConnected
-    case notDisconnected
     
     case peripheralNotRecognized(CBPeripheral)
     case peripheralFailedToConnect(CentralManager.Peripheral, cbError: Error?)
     case peripheralDisconnected(CentralManager.Peripheral, cbError: Error)
+}
+
+public enum PeripheralError : Error {
+
+    case notConnectable
+    case notConnected
+    case notDisconnected
     
-    case serviceDiscoveryError(CentralManager.Peripheral, cbError: Error)
-    case serviceDiscoveryRepeated(CentralManager.Peripheral)
-    case serviceDiscoverySubscriptionMismatch(CentralManager.Peripheral, CBService)
-    case serviceDiscoveryNoServices(CentralManager.Peripheral)
+    case servicesDiscoveryError(CentralManager.Peripheral, cbError: Error)
+    case servicesRediscovered(CentralManager.Peripheral)
+    case servicesDiscoverySubscriptionMismatch(CentralManager.Peripheral, CBService)
+    case servicesDiscoveryNoServices(CentralManager.Peripheral)
     
-    case charactericticDiscoveryUnrecognizedService(CentralManager.Peripheral, CBService)
-    case charactericticDiscoveryError(CentralManager.Service, cbError: Error)
-    case characteristicDiscoveryRepeated(CentralManager.Service)
-    case characteristicDiscoverySubscriptionMismatch(CentralManager.Service, CBCharacteristic)
-    case characteristicDiscoveryNoCharacteristics(CentralManager.Service)
+    case charactericticsDiscoveryUnrecognizedService(CentralManager.Peripheral, CBService)
+    case charactericticsDiscoveryError(CentralManager.Service, cbError: Error)
+    case characteristicsRediscovered(CentralManager.Service)
+    case characteristicsDiscoverySubscriptionMismatch(CentralManager.Service, CBCharacteristic)
+    case characteristicsDiscoveryNoCharacteristics(CentralManager.Service)
     
-    case descriptorDiscoveryUnrecognizedCharacterictic(CentralManager.Peripheral, CBCharacteristic)
-    case descriptorDiscoveryError(CentralManager.Characteristic, cbError: Error)
-    case descriptorDiscoveryRepeated(CentralManager.Characteristic)
+    case descriptorsDiscoveryUnrecognizedCharacterictic(CentralManager.Peripheral, CBCharacteristic)
+    case descriptorsDiscoveryError(CentralManager.Characteristic, cbError: Error)
+    case descriptorsRediscovered(CentralManager.Characteristic)
     
     case updateValueUnrecognizedCharacterictic(CentralManager.Peripheral, CBCharacteristic)
     case writeValueUnrecognizedCharacterictic(CentralManager.Peripheral, CBCharacteristic)
@@ -54,7 +58,4 @@ public enum CentralManagerError : Error {
     case notWriteable(CentralManager.Characteristic)
     case writeInProgress(CentralManager.Characteristic)
     case writeError(CentralManager.Characteristic, cbError: Error)
-}
-
-public enum PeripheralError : Error {
 }

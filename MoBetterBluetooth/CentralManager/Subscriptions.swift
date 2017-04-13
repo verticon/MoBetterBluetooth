@@ -40,27 +40,23 @@ extension CentralManager {
 
     public struct CharacteristicSubscription : Encodable {
         public let id: Identifier
-        public let discoverDescriptors: Bool
 
-        public init(id: Identifier, discoverDescriptors: Bool) {
+        public init(id: Identifier) {
             self.id = id
-            self.discoverDescriptors = discoverDescriptors
         }
 
         public init?(_ properties: Encodable.Properties?) {
             guard let properties = properties else { return nil }
 
-            if  let id = Identifier(properties["id"] as? Encodable.Properties),
-                let discover = properties["discover"] as? Bool {
+            if  let id = Identifier(properties["id"] as? Encodable.Properties) {
                 self.id = id
-                self.discoverDescriptors = discover
             } else {
                 return nil
             }
         }
         
         public func encode() -> Encodable.Properties {
-            return ["id": id.encode(), "discover": discoverDescriptors]
+            return ["id": id.encode()]
         }
     }
 

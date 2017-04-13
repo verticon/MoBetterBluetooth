@@ -26,7 +26,7 @@ extension CentralManager {
             
             switch manager.state {
             case CBManagerState.poweredOn:
-                centralManager.sendEvent(.managerReady(centralManager))
+                centralManager.sendEvent(.ready(centralManager))
                 
             case CBManagerState.poweredOff:
                 /* We are not setting the CBCentralManagerState initialization option CBCentralManagerOptionShowPowerAlertKey
@@ -72,7 +72,7 @@ extension CentralManager {
             let key = getKey(for: cbPeripheral)
             
             guard discoveredPeripherals[key] == nil else {
-                centralManager.sendEvent(.peripheralRediscovered(cbPeripheral, advertisementData: data))
+                centralManager.sendEvent(.rediscoveredPeripheral(cbPeripheral, advertisementData: data))
                 return
             }
             
@@ -81,26 +81,22 @@ extension CentralManager {
             self.discoveredPeripherals[key] = delegate
             cbPeripheral.delegate = delegate
             
-            centralManager.sendEvent(.peripheralDiscovered(peripheral, rssi: signalStrength))
+            centralManager.sendEvent(.discoveredPeripheral(peripheral, rssi: signalStrength))
 
             if centralManager.subscription.autoConnect && peripheral.connectable {
                 manager.connect(cbPeripheral, options: nil)
-                centralManager.sendEvent(.peripheralStateChange(peripheral)) // disconnected => connecting
+                peripheral.sendEvent(.stateChanged(peripheral)) // disconnected => connecting
             }
-            else {
-                centralManager.sendEvent(.peripheralReady(peripheral))
-                
-                // TODO: Revisit the scenario of a non Apple beacon
-                /*
-                 infoMessage += "Manufacturer Specific Data:\n"
-                 if let manufacturerStrings = decodeManufacturerSpecificData(advertisementData: data) {
-                 for string in manufacturerStrings {
-                 infoMessage += "\t\(string)\n"
-                 }
-                 }
-                 */
-            }
-            
+
+            // TODO: Revisit the scenario of a non Apple beacon
+            /*
+             infoMessage += "Manufacturer Specific Data:\n"
+             if let manufacturerStrings = decodeManufacturerSpecificData(advertisementData: data) {
+             for string in manufacturerStrings {
+             infoMessage += "\t\(string)\n"
+             }
+             }
+             */
         }
         
         @objc func centralManager(_ manager: CBCentralManager, didConnect cbPeripheral: CBPeripheral) {
@@ -120,11 +116,8 @@ extension CentralManager {
                 let serviceUuids = centralManager.subscription.getServiceUuids()
                 peripheral.cbPeripheral.discoverServices(serviceUuids)
             }
-            else {
-                centralManager.sendEvent(.peripheralReady(peripheral))
-            }
 
-            centralManager.sendEvent(.peripheralStateChange(delegate.peripheral)) // connecting => connected
+            peripheral.sendEvent(.stateChanged(peripheral)) // connecting => connected
         }
         
         @objc func centralManager(_ manager: CBCentralManager, didFailToConnect cbPeripheral: CBPeripheral, error: Error?) {
@@ -144,7 +137,7 @@ extension CentralManager {
             
             centralManager.sendEvent(.error(centralManagerError))
 
-            centralManager.sendEvent(.peripheralStateChange(delegate.peripheral)) // connecting => disconnected
+            peripheral.sendEvent(.stateChanged(delegate.peripheral)) // connecting => disconnected
         }
         
         // TODO: Cleanup? From the Apple documentation: Note that when a peripheral is disconnected, all of its services, characteristics, and characteristic descriptors are invalidated.
@@ -172,7 +165,7 @@ extension CentralManager {
                 centralManager.sendEvent(.error(.peripheralDisconnected(peripheral, cbError: error)))
             }
 
-            centralManager.sendEvent(.peripheralStateChange(delegate.peripheral)) // disconnecting => disconnected, or connected => disconnected
+            peripheral.sendEvent(.stateChanged(delegate.peripheral)) // disconnecting => disconnected, or connected => disconnected
         }
         
         func getKey(for cbPeripheral: CBPeripheral) -> String {
