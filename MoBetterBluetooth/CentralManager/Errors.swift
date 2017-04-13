@@ -10,16 +10,18 @@ import Foundation
 import CoreBluetooth
 
 // The majority of these errors result from sanity checks performed by the delegates.
+// TODO: Consider whether some of the sanity checks should instead result in a fatal error.
 public enum CentralManagerError : Error {
     case notReady
     case bleNotSupported
     
     case notConnectable
+    case notConnected
     case notDisconnected
     
     case peripheralNotRecognized(CBPeripheral)
-    case peripheralRediscovered(CBPeripheral, advertisementData: [String : Any])
     case peripheralFailedToConnect(CentralManager.Peripheral, cbError: Error?)
+    case peripheralDisconnected(CentralManager.Peripheral, cbError: Error)
     
     case serviceDiscoveryError(CentralManager.Peripheral, cbError: Error)
     case serviceDiscoveryRepeated(CentralManager.Peripheral)
@@ -52,4 +54,7 @@ public enum CentralManagerError : Error {
     case notWriteable(CentralManager.Characteristic)
     case writeInProgress(CentralManager.Characteristic)
     case writeError(CentralManager.Characteristic, cbError: Error)
+}
+
+public enum PeripheralError : Error {
 }
