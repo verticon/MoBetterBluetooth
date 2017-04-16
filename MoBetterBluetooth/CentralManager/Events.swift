@@ -19,7 +19,6 @@ public enum CentralManagerEvent {
     case updatedSubscription(CentralManager)
     
     case discoveredPeripheral((CentralManager.Peripheral, rssi: NSNumber))
-    case rediscoveredPeripheral(CBPeripheral, advertisementData: [String : Any])
     
     case error(CentralManagerError)
 }
@@ -31,6 +30,9 @@ public enum PeripheralEvent {
     case descriptorsDiscovered(CentralManager.Characteristic)
 
     case stateChanged(CentralManager.Peripheral)
-    
+
+    case rssiUpdated(CentralManager.Peripheral, newRssi: NSNumber)
+    case advertisementUpdated(CentralManager.Peripheral, newAdvertisement: Advertisement)
+
     case error(PeripheralError)
 }

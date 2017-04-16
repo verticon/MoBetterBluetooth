@@ -69,14 +69,15 @@ extension CentralManager {
         
         @objc func centralManager(_ manager: CBCentralManager, didDiscover cbPeripheral: CBPeripheral, advertisementData data: [String : Any], rssi signalStrength: NSNumber) {
 
-            let key = getKey(for: cbPeripheral)
+            let advertisement = Advertisement(data)
             
+            let key = getKey(for: cbPeripheral)
             guard discoveredPeripherals[key] == nil else {
-                centralManager.sendEvent(.rediscoveredPeripheral(cbPeripheral, advertisementData: data))
+                discoveredPeripherals[key]!.peripheral.updateReceived(newAdvertisement: advertisement, newRssi: signalStrength)
                 return
             }
             
-            let peripheral = centralManager.factory.makePeripheral(for: cbPeripheral, manager: centralManager, advertisementData: data)
+            let peripheral = centralManager.factory.makePeripheral(for: cbPeripheral, manager: centralManager, advertisement: advertisement, rssi: signalStrength)
             let delegate = PeripheralDelegate(centralManager: centralManager, peripheral: peripheral)
             self.discoveredPeripherals[key] = delegate
             cbPeripheral.delegate = delegate
@@ -101,10 +102,7 @@ extension CentralManager {
         
         @objc func centralManager(_ manager: CBCentralManager, didConnect cbPeripheral: CBPeripheral) {
             let key = getKey(for: cbPeripheral)
-            guard let delegate = discoveredPeripherals[key] else {
-                centralManager.sendEvent(.error(.peripheralNotRecognized(cbPeripheral)))
-                return
-            }
+            guard let delegate = discoveredPeripherals[key] else { fatalError("Unrecognized peripheral - \(cbPeripheral)") }
             let peripheral = delegate.peripheral
 
             if let handler = peripheral.connectCompletionhandler {
@@ -122,10 +120,7 @@ extension CentralManager {
         
         @objc func centralManager(_ manager: CBCentralManager, didFailToConnect cbPeripheral: CBPeripheral, error: Error?) {
             let key = getKey(for: cbPeripheral)
-            guard let delegate = discoveredPeripherals[key] else {
-                centralManager.sendEvent(.error(.peripheralNotRecognized(cbPeripheral)))
-                return
-            }
+            guard let delegate = discoveredPeripherals[key] else { fatalError("Unrecognized peripheral - \(cbPeripheral)") }
             let peripheral = delegate.peripheral
 
             let centralManagerError = CentralManagerError.peripheralFailedToConnect(peripheral, cbError: error)
@@ -140,14 +135,12 @@ extension CentralManager {
             peripheral.sendEvent(.stateChanged(delegate.peripheral)) // connecting => disconnected
         }
         
-        // TODO: Cleanup? From the Apple documentation: Note that when a peripheral is disconnected, all of its services, characteristics, and characteristic descriptors are invalidated.
         @objc func centralManager(_ manager: CBCentralManager, didDisconnectPeripheral cbPeripheral: CBPeripheral, error: Error?) {
             let key = getKey(for: cbPeripheral)
-            guard let delegate = discoveredPeripherals[key] else {
-                centralManager.sendEvent(.error(.peripheralNotRecognized(cbPeripheral)))
-                return
-            }
+            guard let delegate = discoveredPeripherals[key] else { fatalError("Unrecognized peripheral - \(cbPeripheral)") }
             let peripheral = delegate.peripheral
+
+            peripheral.services.removeAll()
 
             // If there is a disconnect completion handler then we are here because a disconnect was requested.
             // Else we are here because of an erroneous disconnection. What if we have both a handler AND an error?
