@@ -12,7 +12,7 @@ import VerticonsToolbox
 
 extension CentralManager {
 
-    public struct Identifier : Encodable  {
+    public struct Identifier : Encodable, CustomStringConvertible  {
         public let uuid: CBUUID
         public let name: String?
         
@@ -36,9 +36,13 @@ extension CentralManager {
         public func encode() -> Encodable.Properties {
             return ["name": name ?? "", "uuid": uuid.uuidString]
         }
+
+        public var description : String {
+            return "<\(name ?? "<no name>"), \(uuid.uuidString)>"
+        }
     }
 
-    public struct CharacteristicSubscription : Encodable {
+    public struct CharacteristicSubscription : Encodable, CustomStringConvertible {
         public let id: Identifier
 
         public init(id: Identifier) {
@@ -58,9 +62,13 @@ extension CentralManager {
         public func encode() -> Encodable.Properties {
             return ["id": id.encode()]
         }
+
+        public var description : String {
+            return "<characteristic: \(id)>"
+        }
     }
 
-    public struct ServiceSubscription : Encodable {
+    public struct ServiceSubscription : Encodable, CustomStringConvertible {
         public let id: Identifier
         public let characteristics: [CharacteristicSubscription] // If empty then all of the service's characteristics and descriptors will be discovered
         
@@ -107,10 +115,15 @@ extension CentralManager {
         func getCharacteristicUuids() -> [CBUUID]? {
             return characteristics.isEmpty ? nil : characteristics.map() { $0.id.uuid }
         }
+
+        public var description : String {
+            var description = "<service: \(id)>"
+            characteristics.forEach { description += "\n\t\($0)" }
+            return description
+        }
     }
 
-    // TODO: Make the subscription CustomStringConvertible
-    public struct PeripheralSubscription : Encodable {
+    public struct PeripheralSubscription : Encodable, CustomStringConvertible {
         public let name: String
         public let services: [ServiceSubscription] // If empty then all of the peripheral's services, characteristics and descriptors will be discovered
         public let autoConnect: Bool
@@ -175,6 +188,12 @@ extension CentralManager {
         
         func getServiceUuids() -> [CBUUID]? {
             return services.isEmpty ? nil : services.map() { $0.id.uuid }
+        }
+
+        public var description : String {
+            var description = "<peripheral \(name) - autoConnect \(autoConnect), autodiscover \(autoDiscover)>"
+            services.forEach { description += "\n\($0)" }
+            return description
         }
     }
 }
