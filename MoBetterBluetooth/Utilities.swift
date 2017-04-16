@@ -63,21 +63,7 @@ public func nameForPeripheralState(_ state: CBPeripheralState) -> String {
     }
 }
 
-public func decodeManufacturerSpecificData(advertisementData data: [String : AnyObject]) -> [String]? {
-    if let manufacturerData = data[CBAdvertisementDataManufacturerDataKey] as? Data {
-        let skipManufacturerId = manufacturerData.subdata(in: 2..<(manufacturerData.count - 2))
-        return dataToStringArray(skipManufacturerId)
-    }
-    return nil
-}
-
-public func isConnectable(_ advertisementData: [String : Any]) -> Bool {
-    if let isConnectable = advertisementData[CBAdvertisementDataIsConnectable] as? Bool {
-        return isConnectable
-    }
-    return false
-}
-
+// TODO: Are these constants necessary?
 public let CBUUIDDeviceInformationServiceString = "180A"
 public let DeviceInformationServiceUUID = CBUUID(string: CBUUIDDeviceInformationServiceString)
 public let CBUUIDSystemIDCharacteristicString = "2A23"
