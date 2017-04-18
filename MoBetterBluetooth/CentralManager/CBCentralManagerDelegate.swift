@@ -141,6 +141,8 @@ extension CentralManager {
             let peripheral = delegate.peripheral
 
             peripheral.services.removeAll()
+            peripheral.servicesDiscovered = false
+            peripheral.servicesDiscoveryInProgress = false
 
             // If there is a disconnect completion handler then we are here because a disconnect was requested.
             // Else we are here because of an erroneous disconnection. What if we have both a handler AND an error?

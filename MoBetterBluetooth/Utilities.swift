@@ -10,33 +10,6 @@ import CoreLocation
 import CoreBluetooth
 import VerticonsToolbox
 
-public func nameForAuthorizationStatus(_ status: CLAuthorizationStatus) -> String {
-    switch status {
-    case CLAuthorizationStatus.authorizedAlways: return "AuthorizedAlways"
-    case CLAuthorizationStatus.authorizedWhenInUse: return "AuthorizedWhenInUse"
-    case CLAuthorizationStatus.denied: return "Denied"
-    case CLAuthorizationStatus.notDetermined: return "NotDetermined"
-    case CLAuthorizationStatus.restricted: return "Restricted"
-    }
-}
-
-public func nameForProximity(_ proximity: CLProximity) -> String {
-    switch(proximity) {
-    case .immediate: return "Immediate"
-    case .near: return "Near"
-    case .far: return "Far"
-    case .unknown: return "Unknown"
-    }
-}
-
-public func nameForRegionState(_ state: CLRegionState) -> String {
-    switch state {
-    case CLRegionState.unknown: return "Unknown"
-    case CLRegionState.inside: return "Inside"
-    case CLRegionState.outside: return "Outside"
-    }
-}
-
 public func nameForCBManagerState(_ state: CBManagerState) -> String {
     switch state {
     case CBManagerState.poweredOn:

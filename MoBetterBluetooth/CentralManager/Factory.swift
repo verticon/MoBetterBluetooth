@@ -8,6 +8,7 @@
 
 import UIKit
 import CoreBluetooth
+import CoreLocation
 import VerticonsToolbox
 
 public protocol CentralManagerTypesFactory {
@@ -40,12 +41,15 @@ extension CentralManager {
 
     open class Peripheral : Broadcaster<PeripheralEvent>, CustomStringConvertible {
         
-        public let cbPeripheral: CBPeripheral
         public let manager: CentralManager
+
+        public let cbPeripheral: CBPeripheral
         public private(set) var advertisement: Advertisement
         public private(set) var rssi: NSNumber
-        public internal(set) var services = [Service]()
+        public private(set) var discoveryTime: String
+        public private(set) var discoveryLocation: String?
 
+        public internal(set) var services = [Service]()
         public internal(set) var servicesDiscoveryInProgress = false
         public internal(set) var servicesDiscovered: Bool {
             didSet {
@@ -58,7 +62,22 @@ extension CentralManager {
             self.manager = manager
             self.advertisement = advertisement
             self.rssi = rssi
+
+            discoveryTime = LocalTime.text
             servicesDiscovered = false
+
+            super.init()
+
+            if let location = UserLocation.instance?.location {
+                CLGeocoder().reverseGeocodeLocation(location, completionHandler: geocoderCompletionHandler)
+            }
+        }
+
+        private func geocoderCompletionHandler(placemarks: [CLPlacemark]?, error: Error?) {
+            if let address = placemarks?[0].addressDictionary?["Street"] {
+                discoveryLocation = String(describing: address)
+                sendEvent(.locationDetermined(self, discoveryLocation!))
+            }
         }
 
         public func updateReceived(newAdvertisement: Advertisement, newRssi: NSNumber) {

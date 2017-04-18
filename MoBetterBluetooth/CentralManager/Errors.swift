@@ -9,8 +9,6 @@
 import Foundation
 import CoreBluetooth
 
-// The majority of these errors result from sanity checks performed by the delegates.
-// TODO: Consider whether some of the sanity checks should instead result in a fatal error.
 public enum CentralManagerError : Error {
 
     case notReady

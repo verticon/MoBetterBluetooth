@@ -25,6 +25,8 @@ public enum CentralManagerEvent {
 
 public enum PeripheralEvent {
 
+    case locationDetermined(CentralManager.Peripheral, String)
+
     case servicesDiscovered(CentralManager.Peripheral)
     case characteristicsDiscovered(CentralManager.Service)
     case descriptorsDiscovered(CentralManager.Characteristic)
