@@ -11,7 +11,7 @@ import CoreBluetooth
 import VerticonsToolbox
 
 public struct Advertisement : CustomStringConvertible {
-    internal var data: [String : Any]
+    public internal(set) var data: [String : Any]
     
     internal init(_ data: [String : Any]) {
         self.data = data
@@ -38,23 +38,9 @@ public struct Advertisement : CustomStringConvertible {
         if data.count > 0 {
             var firstEntry = true
             for entry in data {
-                description += "\(firstEntry ? "" : ", ")\(entry.0) = "
-                
-                if let array = entry.1 as? Array<Any> {
-                    description += "["
-                    
-                    var firstEntry = true
-                    array.forEach { description += "\(firstEntry ? "" : ", ")\($0)"; firstEntry = false }
-                    
-                    description += "]"
-                }
-                else {
-                    description += "\(entry.1)"
-                }
-                
+                description += "\(firstEntry ? "" : ", ")\(describeEntry(entry))"
                 firstEntry = false
             }
-            
         }
         else {
             description += "no advertisement data"
@@ -63,5 +49,45 @@ public struct Advertisement : CustomStringConvertible {
         description += ">"
         
         return description
+    }
+    
+    public func describeEntry(_ entry: (key: String, value: Any)) -> String {
+
+        let keyDesc: String
+        switch entry.key {
+        case CBAdvertisementDataLocalNameKey:
+            keyDesc = "Local Name"
+        case CBAdvertisementDataIsConnectable:
+            keyDesc = "Connectable"
+        case CBAdvertisementDataServiceDataKey:
+            keyDesc = "Service Data"
+        case CBAdvertisementDataServiceUUIDsKey:
+            keyDesc = "Service UUIDs"
+        case CBAdvertisementDataTxPowerLevelKey:
+            keyDesc = "Power Level"
+        case CBAdvertisementDataManufacturerDataKey:
+            keyDesc = "Manufacturer Data"
+        case CBAdvertisementDataOverflowServiceUUIDsKey:
+            keyDesc = "Overflow  Service UUIDs"
+        case CBAdvertisementDataSolicitedServiceUUIDsKey:
+            keyDesc = "Solicited Service UUIDs"
+        default:
+            keyDesc = "\(entry.key)"
+        }
+
+        var valueDesc: String
+        if let array = entry.value as? Array<Any> {
+            valueDesc = "["
+            
+            var firstEntry = true
+            array.forEach { valueDesc += "\(firstEntry ? "" : ", ")\($0)"; firstEntry = false }
+            
+            valueDesc += "]"
+        }
+        else {
+            valueDesc = "\(entry.value)"
+        }
+
+        return keyDesc + ": " + valueDesc
     }
 }

@@ -34,7 +34,7 @@ public enum PeripheralEvent {
     case stateChanged(CentralManager.Peripheral)
 
     case rssiUpdated(CentralManager.Peripheral, newRssi: NSNumber)
-    case advertisementUpdated(CentralManager.Peripheral, newAdvertisement: Advertisement)
+    case advertisementUpdated(CentralManager.Peripheral, newEntries: Advertisement)
 
     case error(PeripheralError)
 }

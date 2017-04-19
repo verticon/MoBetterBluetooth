@@ -89,7 +89,7 @@ extension CentralManager {
                 }
             }
             if modified {
-                sendEvent(.advertisementUpdated(self, newAdvertisement: advertisement))
+                sendEvent(.advertisementUpdated(self, newEntries: newAdvertisement))
             }
 
             if rssi != newRssi {
