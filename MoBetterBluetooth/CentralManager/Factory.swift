@@ -104,7 +104,9 @@ extension CentralManager {
         }
 
         public var description : String {
-            var description = "\(cbPeripheral), services \(servicesDiscovered ? "discovered" : "not discovered")\n\(advertisement)"
+            var description = "\(cbPeripheral)"
+            if cbPeripheral.state == .connected { description += ", services \(servicesDiscovered ? "discovered" : "not discovered")" }
+            description += "\n\(advertisement)"
             
             if servicesDiscovered {
                 for service in services {
