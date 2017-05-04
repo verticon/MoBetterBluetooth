@@ -10,33 +10,36 @@ import CoreLocation
 import CoreBluetooth
 import VerticonsToolbox
 
-public func nameForCBManagerState(_ state: CBManagerState) -> String {
-    switch state {
-    case CBManagerState.poweredOn:
-        return "PoweredOn"
-    case CBManagerState.poweredOff:
-        return "PoweredOff"
-    case CBManagerState.resetting:
-        return "Resetting"
-    case CBManagerState.unauthorized:
-        return "Unauthorized"
-    case CBManagerState.unknown:
-        return "Unknown"
-    case CBManagerState.unsupported:
-        return "Unsupported"
+extension CBManagerState{
+    var name: String {
+        switch self {
+        case .poweredOn:
+            return "PoweredOn"
+        case .poweredOff:
+            return "PoweredOff"
+        case .resetting:
+            return "Resetting"
+        case .unauthorized:
+            return "Unauthorized"
+        case .unknown:
+            return "Unknown"
+        case .unsupported:
+            return "Unsupported"
+        }
     }
 }
 
-public func nameForPeripheralState(_ state: CBPeripheralState) -> String {
-    switch state {
-    case CBPeripheralState.connecting: return "Connecting"
-    case CBPeripheralState.connected: return "Connected"
-    case CBPeripheralState.disconnecting: return "Disconnecting"
-    case CBPeripheralState.disconnected: return "Disconnected"
+extension CBPeripheralState {
+    var name: String {
+        switch self {
+        case .connecting: return "Connecting"
+        case .connected: return "Connected"
+        case .disconnecting: return "Disconnecting"
+        case .disconnected: return "Disconnected"
+        }
     }
 }
 
-// TODO: Are these constants necessary?
 public let CBUUIDDeviceInformationServiceString = "180A"
 public let DeviceInformationServiceUUID = CBUUID(string: CBUUIDDeviceInformationServiceString)
 public let CBUUIDSystemIDCharacteristicString = "2A23"
@@ -94,6 +97,7 @@ private let uuidMappings = [
     HardwareRevisionCharacteristicUUID : "Hardware Revision",
     SoftwareRevisionCharacteristicUUID : "Software Revision",
     ManufacturerNameCharacteristicUUID : "Manufacturer Name",
+    PnPIDCharacteristicUUID : "PnP ID",
 
     CurrentTimeServiceUUID : "Current Time",
     CurrentTimeCharacteristicUUID : "Current Time",
@@ -108,12 +112,12 @@ private let uuidMappings = [
     BatteryLevelCharacteristicUUID : "Battery Level",
 
     
-    CharacteristicExtendedPropertiesUUID : "Characteristic Extended Properties", // 2900
+    CharacteristicExtendedPropertiesUUID : "Extended Properties", // 2900
     CharacteristicUserDescriptionUUID : "User Description", // 2901
-    ClientCharacteristicConfigurationUUID : "Client Characteristic Configuration", // 2902
-    ServerCharacteristicConfigurationUUID : "Server Characteristic Configuration", // 2903
-    CharacteristicFormatUUID : "Characteristic Format", // 2904
-    CharacteristicAggregateFormatUUID : "Characteristic Aggregate Format", // 2905
+    ClientCharacteristicConfigurationUUID : "Client Configuration", // 2902
+    ServerCharacteristicConfigurationUUID : "Server Configuration", // 2903
+    CharacteristicFormatUUID : "Format", // 2904
+    CharacteristicAggregateFormatUUID : "Aggregate Format", // 2905
 ]
 
 public func nameForWellKnownUuid(_ uuid: CBUUID) -> String? {

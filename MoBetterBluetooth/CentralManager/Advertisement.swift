@@ -22,7 +22,7 @@ public struct Advertisement : CustomStringConvertible {
         get {
             if let manufacturerData = data[CBAdvertisementDataManufacturerDataKey] as? Data {
                 let skipManufacturerId = manufacturerData.subdata(in: 2..<(manufacturerData.count - 2))
-                return dataToStringArray(skipManufacturerId)
+                return skipManufacturerId.asStringArray()
             }
             return nil
         }

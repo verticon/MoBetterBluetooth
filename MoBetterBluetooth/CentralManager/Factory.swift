@@ -37,6 +37,8 @@ extension CentralManagerTypesFactory {
 }
 
 // TODO: Convert the hexidecimal printing of the properties to something more meaningful
+// TODO: Get rid of parent
+
 extension CentralManager {
 
     open class Peripheral : Broadcaster<PeripheralEvent>, CustomStringConvertible {
@@ -185,7 +187,7 @@ extension CentralManager {
 
         public weak var cbService: CBService?
         public let parent: Peripheral
-        public internal(set) var characteristics = [Characteristic]()
+        open internal(set) var characteristics = [Characteristic]()
 
         public internal(set) var characteristicDiscoveryInProgress = false
         public internal(set) var characteristicsDiscovered: Bool {
@@ -300,12 +302,12 @@ extension CentralManager {
         public typealias ReadCompletionHandler = (ReadResult) -> Void
         private var readCompletionHandler: ReadCompletionHandler?
         
-        public var readable : Bool {
+        public var isReadable : Bool {
             return cbCharacteristic?.properties.contains(CBCharacteristicProperties.read) ?? false
         }
         
         public func read(_ completionHandler: @escaping ReadCompletionHandler) -> PeripheralStatus {
-            guard readable else { return .failure(.notReadable) }
+            guard isReadable else { return .failure(.notReadable) }
 
             guard readCompletionHandler == nil else { return .failure(.readInProgress) }
 
@@ -322,7 +324,7 @@ extension CentralManager {
         // The Central Manager will also call this method when a notification is received.
         //
         // I wish that there were a way to distingush read completion from notification.
-        public func readCompleted(_ value : Data?, cbError: Error?) {
+        func readCompleted(_ value : Data?, cbError: Error?) {
             guard readCompletionHandler != nil || notificationHandler != nil else {
                 fatalError("Read completed method invoked but both completion handlers are nil???")
             }
@@ -349,12 +351,12 @@ extension CentralManager {
         public typealias WriteCompletionHandler = (PeripheralStatus) -> Void
         private var writeCompletionHandler: WriteCompletionHandler?
 
-        public var writeable : Bool {
+        public var isWriteable : Bool {
             return cbCharacteristic?.properties.contains(CBCharacteristicProperties.write) ?? false
         }
         
         public func write(_ value: Data, completionHandler: @escaping WriteCompletionHandler) -> PeripheralStatus {
-            guard writeable else { return .failure(.notWriteable) }
+            guard isWriteable else { return .failure(.notWriteable) }
             
             guard writeCompletionHandler == nil else { return .failure(.writeInProgress) }
             
@@ -368,7 +370,7 @@ extension CentralManager {
         }
         
         // The Central Manager will call this method when the asynchronous write has completed.
-        public func writeCompleted(cbError: Error?) {
+        func writeCompleted(cbError: Error?) {
             guard let handler = writeCompletionHandler else {
                 fatalError("Write completed method invoked but completion handler is nil???")
             }
@@ -387,13 +389,13 @@ extension CentralManager {
         
         private var notificationHandler: ReadCompletionHandler?
 
-        public var notifiable : Bool {
+        public var isNotifiable : Bool {
             return cbCharacteristic?.properties.contains(CBCharacteristicProperties.notify) ?? false
         }
         
         // If enabled is true then handler must not be nil
         public func notify(enabled: Bool, handler: ReadCompletionHandler?) -> PeripheralStatus {
-            guard notifiable else { return .failure(.notNotifiable) }
+            guard isNotifiable else { return .failure(.notNotifiable) }
 
             guard let characteristic = cbCharacteristic else { return .failure(.cbAttributeIsNil) }
 
@@ -409,8 +411,7 @@ extension CentralManager {
         }
         
         // The Central Manager will call this method when the asynchronous notification state update has completed.
-        // User types should override this method.
-        public func setNotificationStateCompleted(value: Bool, cbError: Error?) {
+        func setNotificationStateCompleted(value: Bool, cbError: Error?) {
             if let error = cbError {
                 notificationHandler!(.failure(.characteristicNotifyError(self, cbError: error)))
             }
@@ -459,7 +460,7 @@ extension CentralManager {
         }
         
         // The Central Manager will call this method when an asynchronous read has completed.
-        public func readCompleted(_ value : Any?, cbError: Error?) {
+        func readCompleted(_ value : Any?, cbError: Error?) {
             guard readCompletionHandler != nil else {
                 fatalError("Read completed method invoked but completion handler is nil???")
             }
@@ -496,7 +497,7 @@ extension CentralManager {
         }
         
         // The Central Manager will call this method when the asynchronous write has completed.
-        public func writeCompleted(cbError: Error?) {
+        func writeCompleted(cbError: Error?) {
             guard let handler = writeCompletionHandler else {
                 fatalError("Write completed method invoked but completion handler is nil???")
             }
