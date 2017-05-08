@@ -89,7 +89,7 @@ extension CentralManager {
             }
             
             cbCharacteristic.descriptors?.forEach {
-                let id = CentralManager.Identifier(uuid: $0.uuid, name: nil)
+                let id = Identifier(uuid: $0.uuid, name: nil)
                 let descriptor = centralManager.factory.makeDescriptor(for: $0, id: id, parent: characteristic)
                 characteristic.descriptors.append(descriptor)
             }
