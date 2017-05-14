@@ -36,7 +36,6 @@ extension CentralManagerTypesFactory {
     }
 }
 
-// TODO: Convert the hexidecimal printing of the properties to something more meaningful
 // TODO: Get rid of parent
 
 extension CentralManager {
@@ -185,7 +184,7 @@ extension CentralManager {
 
     open class Service : Attribute, CustomStringConvertible {
 
-        public weak var cbService: CBService?
+        public internal(set) weak var cbService: CBService?
         public let parent: Peripheral
         open internal(set) var characteristics = [Characteristic]()
 
@@ -217,11 +216,14 @@ extension CentralManager {
         }
         
         public var description : String {
-            var description = "\(String(describing: cbService)), characteristics \(characteristicsDiscovered ? "discovered" : "not discovered")"
-            for characteristic in characteristics {
-                description += "\n\(characteristic)"
+            if let service = cbService {
+                var description = "\(service), characteristics \(characteristicsDiscovered ? "discovered" : "not discovered")"
+                for characteristic in characteristics {
+                    description += "\n\(characteristic)"
+                }
+                return description
             }
-            return description
+            return "<cbService is nil?>"
         }
         
         public subscript(characteristicId: Identifier) -> Characteristic? {
@@ -240,7 +242,42 @@ extension CentralManager {
 
     open class Characteristic : Attribute, CustomStringConvertible {
         
-        public weak var cbCharacteristic : CBCharacteristic?
+        public struct Properties {
+
+            public struct Property {
+                let property: CBCharacteristicProperties
+                let name: String
+                let isEnabled: Bool
+            }
+
+            public let properties: [Property]
+
+            init(cbCharacteristic: CBCharacteristic) {
+                var properties = [Property]()
+                properties.append(Property(property: .broadcast, name: "Broadcast", isEnabled: cbCharacteristic.properties.contains(.broadcast) ? true : false))
+                properties.append(Property(property: .read, name: "Read", isEnabled: cbCharacteristic.properties.contains(.read) ? true : false))
+                properties.append(Property(property: .writeWithoutResponse, name: "Write w/o Response", isEnabled: cbCharacteristic.properties.contains(.writeWithoutResponse) ? true : false))
+                properties.append(Property(property: .write, name: "Write", isEnabled: cbCharacteristic.properties.contains(.write) ? true : false))
+                properties.append(Property(property: .notify, name: "Notify", isEnabled: cbCharacteristic.properties.contains(.notify) ? true : false))
+                properties.append(Property(property: .indicate, name: "Indicate", isEnabled: cbCharacteristic.properties.contains(.indicate) ? true : false))
+                properties.append(Property(property: .authenticatedSignedWrites, name: "Auth Signed Writes", isEnabled: cbCharacteristic.properties.contains(.authenticatedSignedWrites) ? true : false))
+                properties.append(Property(property: .extendedProperties, name: "Extended Properties", isEnabled: cbCharacteristic.properties.contains(.extendedProperties) ? true : false))
+                properties.append(Property(property: .notifyEncryptionRequired, name: "Notify Encypt Req", isEnabled: cbCharacteristic.properties.contains(.notifyEncryptionRequired) ? true : false))
+                properties.append(Property(property: .indicateEncryptionRequired, name: "Indicate Encrypt Req", isEnabled: cbCharacteristic.properties.contains(.indicateEncryptionRequired) ? true : false))
+                self.properties = properties
+            }
+
+            public var all: [String] {
+                return properties.map{ $0.name + " : " + ($0.isEnabled ? "yes" : "no") }
+            }
+
+            public var enabled: [String] {
+                return properties.filter{ $0.isEnabled }.map{ $0.name }
+            }
+        }
+        public private(set) var properties: Properties
+
+        public internal(set) weak var cbCharacteristic : CBCharacteristic? // ToDO: Revisit the need for the cbCharacteristic reference to be weak
         public let parent: Service
         public internal(set) var descriptors = [Descriptor]()
 
@@ -255,6 +292,7 @@ extension CentralManager {
             self.cbCharacteristic = cbCharacteristic
             self.parent = parent
             descriptorsDiscovered = false
+            properties = Properties(cbCharacteristic: cbCharacteristic)
             super.init(id: id)
         }
         
@@ -272,11 +310,15 @@ extension CentralManager {
         }
         
         public var description : String {
-            var description =  "\(String(describing: cbCharacteristic)), descriptors \(descriptorsDiscovered ? "discovered" : "not discovered")"
-            for descriptor in descriptors {
-                description += increaseIndent("\n\(descriptor)")
+            if let characteristic = cbCharacteristic {
+                let properties = self.properties.enabled.reduce(""){ ($0.isEmpty ? "" : "|" ) + $1 }
+                var description = "\(characteristic), Properties = \(properties), descriptors \(descriptorsDiscovered ? "discovered" : "not discovered")"
+                for descriptor in descriptors {
+                    description += increaseIndent("\n\(descriptor)")
+                }
+                return description
             }
-            return description
+            return "<cbCharacteristic is nil?>"
         }
         
         public subscript(descriptorId: Identifier) -> Descriptor? {
@@ -421,7 +463,7 @@ extension CentralManager {
     // TODO: Get descriptors squared away
     open class Descriptor : Attribute, CustomStringConvertible {
         
-        public weak var cbDescriptor : CBDescriptor?
+        public internal(set) weak var cbDescriptor : CBDescriptor?
         public let parent: Characteristic
         
         public init(cbDescriptor: CBDescriptor, id: Identifier, parent: Characteristic) {
@@ -433,7 +475,7 @@ extension CentralManager {
         public var name: String { return id.name ?? id.uuid.uuidString }
         
         public var description: String {
-            return "\(String(describing: cbDescriptor))"
+            return cbDescriptor == nil ? "<cbDescriptor is nil?>" : "\(cbDescriptor!)"
         }
 
         // ************************** Reading ******************************
