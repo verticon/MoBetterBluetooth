@@ -31,7 +31,11 @@ public struct Advertisement : CustomStringConvertible {
     public var isConnectable: Bool {
         return data[CBAdvertisementDataIsConnectable] as? Bool ?? false
     }
-    
+
+    public var list : [String]? {
+        return data.count > 0 ? data.map { describeEntry($0) } : nil
+    }
+
     public var description : String {
         var description = "<"
         
