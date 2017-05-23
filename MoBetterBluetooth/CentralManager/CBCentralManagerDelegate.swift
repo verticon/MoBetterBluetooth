@@ -82,7 +82,7 @@ extension CentralManager {
             self.discoveredPeripherals[key] = delegate
             cbPeripheral.delegate = delegate
             
-            centralManager.sendEvent(.discoveredPeripheral(peripheral, rssi: signalStrength))
+            centralManager.sendEvent(.peripheralDiscovered(peripheral, rssi: signalStrength))
 
             if centralManager.subscription.autoConnect && peripheral.connectable {
                 manager.connect(cbPeripheral, options: nil)
@@ -134,7 +134,8 @@ extension CentralManager {
 
             peripheral.sendEvent(.stateChanged(delegate.peripheral)) // connecting => disconnected
         }
-        
+
+        // TODO: If the subscription has Auto Connect on then should a disconnect automatically trigger a reconnect?
         @objc func centralManager(_ manager: CBCentralManager, didDisconnectPeripheral cbPeripheral: CBPeripheral, error: Error?) {
             let key = getKey(for: cbPeripheral)
             guard let delegate = discoveredPeripherals[key] else { fatalError("Unrecognized peripheral - \(cbPeripheral)") }

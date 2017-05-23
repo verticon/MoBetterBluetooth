@@ -18,7 +18,7 @@ public enum CentralManagerEvent {
 
     case updatedSubscription(CentralManager)
     
-    case discoveredPeripheral((CentralManager.Peripheral, rssi: NSNumber))
+    case peripheralDiscovered((CentralManager.Peripheral, rssi: NSNumber))
     
     case error(CentralManagerError)
 }

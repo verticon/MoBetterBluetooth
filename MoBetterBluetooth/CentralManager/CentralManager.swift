@@ -27,6 +27,7 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
 
     // If the subscription is empty then the Central Manager will report any and all peripherals;
     // else the Central Manager will only report those peripherals that provide the specified services.
+    // TODO: How are we gauranteeing that the Ready event will be received?
     public init(subscription: PeripheralSubscription, factory: CentralManagerTypesFactory = DefaultFactory()) {
         self.factory = factory
         _subscription = subscription
@@ -45,8 +46,10 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
     }
 
     // Changing the subscription results in the current cbManager being discarded and a new one being created.
-    // This is done so as to discard any existing peripherals that might not match the new subscription. Is there a better way?
+    // This is done so as to discard any existing peripherals that might not match the new subscription.
     // It is up to the application to restart scanning, if desired, after receiving the new manager's ready event.
+    // TODO: Is there a better way?
+    // TODO: Double check this by actually modifing a subscription
     private var _subscription: PeripheralSubscription
     public var subscription: PeripheralSubscription {
         get {
@@ -80,7 +83,7 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
     public private(set) var peripherals = [Peripheral]()
     
     internal func sendEvent(_ event: CentralManagerEvent) {
-        if case let .discoveredPeripheral((peripheral,_)) = event { peripherals.append(peripheral) }
+        if case let .peripheralDiscovered((peripheral,_)) = event { peripherals.append(peripheral) }
         
         broadcast(event)
     }

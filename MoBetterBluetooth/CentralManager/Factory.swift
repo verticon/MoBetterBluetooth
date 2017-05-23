@@ -107,11 +107,11 @@ extension CentralManager {
         public var description : String {
             var description = "\(cbPeripheral)"
             if cbPeripheral.state == .connected { description += ", services \(servicesDiscovered ? "discovered" : "not discovered")" }
-            description += "\n\(advertisement)"
+            description += "\nAdvertisement\(advertisement)"
             
             if servicesDiscovered {
                 for service in services {
-                    description += ("\n\(service)")
+                    description += increaseIndent("\n\(service)")
                 }
             }
 
@@ -210,20 +210,21 @@ extension CentralManager {
             guard let service = cbService else { return .failure(.cbAttributeIsNil) }
 
             characteristicDiscoveryInProgress = true
-            parent.cbPeripheral.discoverCharacteristics(parent.manager.subscription[service]?.getCharacteristicUuids(), for: service)
+            let uuids = parent.manager.subscription[service]?.getCharacteristicUuids()
+            parent.cbPeripheral.discoverCharacteristics(uuids, for: service)
             
             return .success
         }
         
         public var description : String {
             if let service = cbService {
-                var description = "\(service), characteristics \(characteristicsDiscovered ? "discovered" : "not discovered")"
+                var description = "\(id.name ?? "")\(service), characteristics \(characteristicsDiscovered ? "discovered" : "not discovered")"
                 for characteristic in characteristics {
-                    description += "\n\(characteristic)"
+                    description += increaseIndent("\n\(characteristic)")
                 }
                 return description
             }
-            return "<cbService is nil?>"
+            return "\(name)<cbService is nil?>"
         }
         
         public subscript(characteristicId: Identifier) -> Characteristic? {
@@ -311,14 +312,14 @@ extension CentralManager {
         
         public var description : String {
             if let characteristic = cbCharacteristic {
-                let properties = self.properties.enabled.reduce(""){ ($0.isEmpty ? "" : "|" ) + $1 }
-                var description = "\(characteristic), Properties = \(properties), descriptors \(descriptorsDiscovered ? "discovered" : "not discovered")"
+                let properties = self.properties.enabled.reduce(""){ $0 + ($0.isEmpty ? "" : "|" ) + $1 }
+                var description = "\(id.name ?? "")\(characteristic), Properties = \(properties), descriptors \(descriptorsDiscovered ? "discovered" : "not discovered")"
                 for descriptor in descriptors {
                     description += increaseIndent("\n\(descriptor)")
                 }
                 return description
             }
-            return "<cbCharacteristic is nil?>"
+            return "\(name)<cbCharacteristic is nil?>"
         }
         
         public subscript(descriptorId: Identifier) -> Descriptor? {
@@ -475,7 +476,7 @@ extension CentralManager {
         public var name: String { return id.name ?? id.uuid.uuidString }
         
         public var description: String {
-            return cbDescriptor == nil ? "<cbDescriptor is nil?>" : "\(cbDescriptor!)"
+            return cbDescriptor == nil ? "\(name)<cbDescriptor is nil?>" : "\(cbDescriptor!)"
         }
 
         // ************************** Reading ******************************
