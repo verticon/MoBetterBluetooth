@@ -34,18 +34,21 @@ extension CentralManager {
                 return
             }
 
-            cbPeripheral.services?.forEach {
-                guard let id = centralManager.subscription.match($0) else { fatalError("Service \($0) does not match the subscription \(centralManager.subscription)") }
+            cbPeripheral.services?.forEach { cbService in
+                guard let id = centralManager.subscription.match(cbService) else { fatalError("Service \(cbService) does not match the subscription \(centralManager.subscription)") }
                 
-                let service = centralManager.factory.makeService(for: $0, id: id, parent: peripheral)
+                let service = centralManager.factory.makeService(for: cbService, id: id, parent: peripheral)
                 peripheral.services.append(service)
-                
-                if centralManager.subscription.autoDiscover { let _ = service.discoverCharacteristics() }
             }
 
             peripheral.servicesDiscovered = true
-
             peripheral.sendEvent(.servicesDiscovered(peripheral))
+
+            if centralManager.subscription.autoDiscover {
+                peripheral.services.forEach { service in
+                    if case .failure(let error) = service.discoverCharacteristics() { fatalError("Cannot discover \(service)'s characteristics\n\(error)\n") }
+                }
+            }
         }
         
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didDiscoverCharacteristicsFor cbService: CBService, error: Error?) {
@@ -61,18 +64,22 @@ extension CentralManager {
                 return
             }
             
-            cbService.characteristics?.forEach {
-                guard let id = centralManager.subscription.match($0, of: cbService) else { fatalError("\(cbService)'s \($0) does not match the subscription \(centralManager.subscription)") }
+            cbService.characteristics?.forEach { cbCharacteristic in
+                guard let id = centralManager.subscription.match(cbCharacteristic, of: cbService) else { fatalError("\(cbService)'s \(cbCharacteristic) does not match the subscription \(centralManager.subscription)") }
                 
-                let characteristic = centralManager.factory.makeCharacteristic(for: $0, id: id, parent: service)
+                let characteristic = centralManager.factory.makeCharacteristic(for: cbCharacteristic, id: id, parent: service)
                 service.characteristics.append(characteristic)
-                
-                if centralManager.subscription.autoDiscover { let _ = characteristic.discoverDescriptors() }
             }
 
             service.characteristicsDiscovered = true
-
             peripheral.sendEvent(.characteristicsDiscovered(service))
+
+            if centralManager.subscription.autoDiscover {
+                service.characteristics.forEach { characteristic in
+                    if case .failure(let error) = characteristic.discoverDescriptors() { fatalError("Cannot discover \(characteristic)'s descriptors\n\(error)\n") }
+                }
+            }
+            
         }
         
         @objc func peripheral(_ cbPeripheral: CBPeripheral, didDiscoverDescriptorsFor cbCharacteristic: CBCharacteristic, error: Error?) {
