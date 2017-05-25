@@ -38,6 +38,8 @@ extension CentralManagerTypesFactory {
 
 // TODO: Get rid of parent
 
+// TODO: Replace the fatal errors with exceptions
+
 extension CentralManager {
 
     open class Peripheral : Broadcaster<PeripheralEvent>, CustomStringConvertible {
@@ -348,30 +350,29 @@ extension CentralManager {
         public var isReadable : Bool {
             return cbCharacteristic?.properties.contains(CBCharacteristicProperties.read) ?? false
         }
-        
+
         public func read(_ completionHandler: @escaping ReadCompletionHandler) -> PeripheralStatus {
+            guard let characteristic = cbCharacteristic else { return .failure(.cbAttributeIsNil) }
+
             guard isReadable else { return .failure(.notReadable) }
 
             guard readCompletionHandler == nil else { return .failure(.readInProgress) }
-
-            guard let characteristic = cbCharacteristic else { return .failure(.cbAttributeIsNil) }
-
             readCompletionHandler = completionHandler
-
             parent.parent.cbPeripheral.readValue(for: characteristic)
 
             return .success
         }
         
         // The Central Manager will call this method when an asynchronous read has completed.
-        // The Central Manager will also call this method when a notification is received.
+        // The Central Manager also calls this method when a notification is received.
+        // AFAIK CoreBluetooth does not provide a way to distinguish between a read completed
+        // and a notification.
         //
-        // I wish that there were a way to distingush read completion from notification.
+        // If notifications are enabled then performing a read will result in the notification
+        // handler being invoked even though the peripheral has not produced a new value. This
+        // method takes steps to handle that situation.
         func readCompleted(_ value : Data?, cbError: Error?) {
-            guard readCompletionHandler != nil || notificationHandler != nil else {
-                fatalError("Read completed method invoked but both completion handlers are nil???")
-            }
-            
+
             let result: ReadResult
             if let error = cbError {
                 result = .failure(.characteristicReadError(self, cbError: error))
@@ -379,13 +380,20 @@ extension CentralManager {
                 result = .success(value!)
             }
 
+            // TODO: Reconsider whether or not the following logic works if a read is issued
+            // by the central "at the same time" that a notification is being produced by the
+            // peripheral. The assumption is that two events will produced. Consider that the
+            // timing is such that the read completion handler receives the notification data
+            // and the notification handler receives the read result.
             if let handler = readCompletionHandler {
                 readCompletionHandler = nil // Do this first so that the handler can initiate a new read if desired.
                 handler(result)
             }
-
-            if let handler = notificationHandler /* , case ReadResult.success = result */ {
+            else if let handler = notificationHandler {
                 handler(result)
+            }
+            else {
+                fatalError("Read completed method invoked but both completion handlers are nil???")
             }
         }
         
@@ -436,27 +444,36 @@ extension CentralManager {
             return cbCharacteristic?.properties.contains(CBCharacteristicProperties.notify) ?? false
         }
         
-        // If enabled is true then handler must not be nil
+        public var isNotifying : Bool {
+            return cbCharacteristic?.isNotifying ?? false
+        }
+        
+        // If enabled is true then handler must not be nil. If enabled is false then handler is ignored.
         public func notify(enabled: Bool, handler: ReadCompletionHandler?) -> PeripheralStatus {
             guard isNotifiable else { return .failure(.notNotifiable) }
 
             guard let characteristic = cbCharacteristic else { return .failure(.cbAttributeIsNil) }
 
-            if enabled && handler == nil {
-                return .failure(.handlerCannotBeNil)
+            if enabled {
+                if handler == nil { return .failure(.handlerCannotBeNil) }
+                notificationHandler = handler
             }
-            
-            notificationHandler = handler
+            else {
+                notificationHandler = nil
+            }
 
             parent.parent.cbPeripheral.setNotifyValue(enabled, for: characteristic)
             
             return .success
         }
         
-        // The Central Manager will call this method when the asynchronous notification state update has completed.
+        // The Central Manager will call this method when the asynchronous notification state update
+        // has completed.
         func setNotificationStateCompleted(value: Bool, cbError: Error?) {
             if let error = cbError {
                 notificationHandler!(.failure(.characteristicNotifyError(self, cbError: error)))
+                notificationHandler = nil
+                return
             }
         }
     }
