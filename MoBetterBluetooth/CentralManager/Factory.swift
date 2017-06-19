@@ -299,7 +299,13 @@ extension CentralManager {
             super.init(id: id)
         }
         
-        public var name: String { return id.name ?? id.uuid.uuidString }
+        public var name: String {
+            if let name = id.name { return name }
+            for descriptor in descriptors {
+                if descriptor.id.uuid.uuidString == CharacteristicUserDescriptionUUID.uuidString { return descriptor.cbDescriptor?.value as? String ?? id.uuid.uuidString }
+            }
+            return id.uuid.uuidString
+        }
         
         public func discoverDescriptors() -> PeripheralStatus {
             guard !(descriptorDiscoveryInProgress || descriptorsDiscovered) else { return .failure(.rediscoveryNotAllowed) }
