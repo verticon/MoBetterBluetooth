@@ -18,6 +18,13 @@ extension CentralManager {
         init(centralManager: CentralManager, peripheral: Peripheral) {
             self.centralManager = centralManager
             self.peripheral = peripheral
+            super.init()
+            
+            peripheral.cbPeripheral.delegate = self
+        }
+
+        deinit {
+            peripheral.cbPeripheral.delegate = nil
         }
 
         // Discovery **********************************************

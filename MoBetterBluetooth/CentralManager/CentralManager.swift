@@ -22,21 +22,17 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
     
     // Instance Members **********************************************************************************************
 
-    internal var cbManager: CBCentralManager
-    private var cbManagerDelegate: CentralManagerDelegate // We need to hang on to it because the CBCentralManager's delegate is a weak reference
+    internal var cbManager: CBCentralManager!
+    private var cbManagerDelegate: CentralManagerDelegate! // We need to hang on to it because the CBCentralManager's delegate is a weak reference
 
     // If the subscription is empty then the Central Manager will report any and all peripherals;
     // else the Central Manager will only report those peripherals that provide the specified services.
     // TODO: How are we gauranteeing that the Ready event will be received?
     public init(subscription: PeripheralSubscription, factory: CentralManagerTypesFactory = DefaultFactory()) {
         self.factory = factory
-        _subscription = subscription
-        cbManagerDelegate = CentralManagerDelegate()
-        cbManager = CBCentralManager(delegate: nil, queue: nil)
         super.init()
 
-        cbManagerDelegate.centralManager = self
-        cbManager.delegate = cbManagerDelegate
+        self.subscription = subscription
     }
     
     public var name: String {
@@ -45,27 +41,36 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
         }
     }
 
-    // Changing the subscription results in the current cbManager being discarded and a new one being created.
-    // This is done so as to discard any existing peripherals that might not match the new subscription.
-    // It is up to the application to restart scanning, if desired, after receiving the new manager's ready event.
-    // TODO: Is there a better way?
     // TODO: Double check this by actually modifing a subscription
-    private var _subscription: PeripheralSubscription
+    private var _subscription: PeripheralSubscription!
     public var subscription: PeripheralSubscription {
         get {
             return _subscription
         }
         set {
-            let _ = stopScanning()
-            peripherals.removeAll()
+            let wasScanning = isScanning
+            
+            if cbManager == nil {
+                cbManager = CBCentralManager(delegate: nil, queue: dispatchQueue)
+            }
+            else {
+                let _ = stopScanning()
+                cbManager.delegate = nil
+                cbManagerDelegate = nil
+            }
             _subscription = newValue
-            cbManagerDelegate = CentralManagerDelegate()
-            cbManagerDelegate.centralManager = self
-            cbManager = CBCentralManager(delegate: cbManagerDelegate, queue: nil)
-            sendEvent(.updatedSubscription(self))
+            cbManagerDelegate = CentralManagerDelegate(centralManager: self)
+            cbManager.delegate = cbManagerDelegate
+            if wasScanning { let _ = startScanning() }
+            sendEvent(.subscriptionUpdated(self))
         }
     }
 
+    internal var dispatchQueue: DispatchQueue {
+        get {
+            return DispatchQueue.main
+        }
+    }
     public let factory: CentralManagerTypesFactory
     
     public var isReady: Bool {
@@ -76,15 +81,22 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
     
     public var isScanning : Bool {
         get {
-            return cbManager.isScanning
+            return (cbManager?.isScanning) ?? false
         }
     }
     
-    public private(set) var peripherals = [Peripheral]()
-    
+    public var peripherals: [Peripheral] {
+        get {
+            return cbManagerDelegate.peripheraDelegates.values.map { $0.peripheral }
+        }
+    }
+
+    public func removePeripheral(_ peripheral: Peripheral) {
+        cbManagerDelegate.removePeripheral(peripheral)
+        sendEvent(.peripheralRemoved(peripheral))
+    }
+
     internal func sendEvent(_ event: CentralManagerEvent) {
-        if case let .peripheralDiscovered((peripheral,_)) = event { peripherals.append(peripheral) }
-        
         broadcast(event)
     }
 
@@ -92,7 +104,7 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
         guard isReady else { return .failure(.notReady) }
         
         let serviceUuids = subscription.getServiceUuids()
-        cbManager.scanForPeripherals(withServices: serviceUuids, options: nil)
+        cbManager.scanForPeripherals(withServices: serviceUuids, options: [CBCentralManagerScanOptionAllowDuplicatesKey : NSNumber(value: subscription.monitorAdvertisements)])
         sendEvent(.startedScanning(self, serviceUuids))
 
         return .success
@@ -109,6 +121,6 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
     }
 
     public var description : String {
-        return "\(name)\(cbManager)"
+        return "\(name) - \(cbManager)"
     }
 }

@@ -98,12 +98,14 @@ extension CentralManager {
         public let services: [ServiceSubscription] // If empty then all of the peripheral's services, characteristics and descriptors will be discovered
         public let autoConnect: Bool
         public let autoDiscover: Bool // Services, characteristics and descriptors
+        public let monitorAdvertisements: Bool
    
-        public init(name: String, services: [ServiceSubscription] = [], autoConnect: Bool, autoDiscover: Bool) {
+        public init(name: String, services: [ServiceSubscription] = [], autoConnect: Bool, autoDiscover: Bool, monitorAdvertisements: Bool) {
             self.name = name
             self.services = services
             self.autoConnect = autoConnect
             self.autoDiscover = autoDiscover
+            self.monitorAdvertisements = monitorAdvertisements
         }
         
         public init?(_ properties: Encodable.Properties?) {
@@ -112,11 +114,13 @@ extension CentralManager {
             if  let name = properties["name"] as? String,
                 let services = properties["services"] as? [Encodable.Properties],
                 let autoConnect = properties["autoConnect"] as? Bool,
-                let autoDiscover = properties["autoDiscover"] as? Bool {
-                self.name = name
-                self.services = services.decode(type: ServiceSubscription.self)
-                self.autoConnect = autoConnect
-                self.autoDiscover = autoDiscover
+                let autoDiscover = properties["autoDiscover"] as? Bool,
+                let monitorAdvertisements = properties["monitorAdvertisements"] as? Bool {
+                    self.name = name
+                    self.services = services.decode(type: ServiceSubscription.self)
+                    self.autoConnect = autoConnect
+                    self.autoDiscover = autoDiscover
+                    self.monitorAdvertisements = monitorAdvertisements
 
             } else {
                 return nil
@@ -124,7 +128,7 @@ extension CentralManager {
         }
         
         public func encode() -> Encodable.Properties {
-            return ["name": name, "services" : services.encode(), "autoConnect" : autoConnect, "autoDiscover" :  autoDiscover]
+            return ["name": name, "services" : services.encode(), "autoConnect" : autoConnect, "autoDiscover" :  autoDiscover, "monitorAdvertisements" :  monitorAdvertisements]
         }
         
         subscript(serviceId: CBUUID) -> ServiceSubscription? {
@@ -161,7 +165,7 @@ extension CentralManager {
         }
 
         public var description : String {
-            var description = "<peripheral \(name) - autoConnect \(autoConnect), autodiscover \(autoDiscover)>"
+            var description = "<peripheral \(name) - autoConnect: \(autoConnect), autodiscover: \(autoDiscover), monitorAdvertisements: \(monitorAdvertisements)>"
             services.forEach { description += "\n\($0)" }
             return description
         }

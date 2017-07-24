@@ -49,6 +49,7 @@ extension CentralManager {
         public let cbPeripheral: CBPeripheral
         public private(set) var advertisement: Advertisement
         public private(set) var rssi: NSNumber
+        public private(set) var receptionState: AdvertismentReceptionState
         public private(set) var discoveryTime: String
         public private(set) var discoveryLocation: String?
 
@@ -63,8 +64,10 @@ extension CentralManager {
         public init(cbPeripheral: CBPeripheral, manager: CentralManager, advertisement: Advertisement, rssi: NSNumber) {
             self.cbPeripheral = cbPeripheral
             self.manager = manager
+
             self.advertisement = advertisement
             self.rssi = rssi
+            receptionState = .receiving
 
             discoveryTime = LocalTime.text
             servicesDiscovered = false
@@ -74,6 +77,12 @@ extension CentralManager {
             if let location = UserLocation.instance?.location {
                 CLGeocoder().reverseGeocodeLocation(location, completionHandler: geocoderCompletionHandler)
             }
+
+            advertisementReceived()
+        }
+
+        deinit {
+            let _ = disconnect(completionhandler: nil)
         }
 
         private func geocoderCompletionHandler(placemarks: [CLPlacemark]?, error: Error?) {
@@ -100,7 +109,33 @@ extension CentralManager {
                 sendEvent(.rssiUpdated(self, newRssi: newRssi))
             }
             
+            advertisementReceived()
         }
+
+        // TODO: Determine - 1) How to measure the advertising interval, 2) What value to use for the timeout prior to having measured the advertising interval
+        private var advertisementMonitoringWorkItem: DispatchWorkItem?
+        private func advertisementReceived() {
+            if manager.subscription.monitorAdvertisements {
+
+                if let item = advertisementMonitoringWorkItem { item.cancel() }
+                
+                if receptionState != .receiving {
+                    receptionState = .receiving
+                    sendEvent(.advertisementReceptionStateChange(self, newState: .receiving))
+                }
+
+                advertisementMonitoringWorkItem = DispatchWorkItem() {
+                    // If both scanning and disconnected then no advertisements means that the peripheral:
+                    // 1) Powered off or, 2) Moved out of range or, 3) Was connected to by some other central.
+                    self.receptionState = (self.manager.isScanning && self.cbPeripheral.state == .disconnected) ? .notReceiving : .suspended
+                    self.sendEvent(.advertisementReceptionStateChange(self, newState: self.receptionState))
+                }
+                
+                manager.dispatchQueue.asyncAfter(deadline: .now() + .seconds(20), execute: advertisementMonitoringWorkItem!)
+            }
+        }
+
+        public private(set) var isAdvertising: Bool = true
 
         public var name: String {
             return cbPeripheral.name ?? cbPeripheral.identifier.uuidString
@@ -124,6 +159,7 @@ extension CentralManager {
             return advertisement.isConnectable
         }
         
+        // TODO: add an optional timeout parameter
         internal var connectCompletionhandler: ((Peripheral, CentralManagerStatus) -> Void)?
         public func connect(completionhandler: ((Peripheral, CentralManagerStatus) -> Void)?) -> PeripheralStatus {
             guard connectable else {  return .failure(.notConnectable) }
@@ -139,7 +175,7 @@ extension CentralManager {
         
         internal var disconnectCompletionhandler: ((Peripheral, CentralManagerStatus) -> Void)?
         public func disconnect(completionhandler: ((Peripheral, CentralManagerStatus) -> Void)?) -> PeripheralStatus {
-            guard cbPeripheral.state == .connected else {  return .failure(.notConnected) }
+            guard cbPeripheral.state == .connected || cbPeripheral.state == .connecting else {  return .failure(.notConnected) }
             
             disconnectCompletionhandler = completionhandler
             manager.cbManager.cancelPeripheralConnection(cbPeripheral)

@@ -16,11 +16,18 @@ public enum CentralManagerEvent {
     case startedScanning((CentralManager, [CBUUID]?))
     case stoppedScanning(CentralManager)
 
-    case updatedSubscription(CentralManager)
+    case subscriptionUpdated(CentralManager)
     
-    case peripheralDiscovered((CentralManager.Peripheral, rssi: NSNumber))
+    case peripheralDiscovered(CentralManager.Peripheral)
+    case peripheralRemoved(CentralManager.Peripheral)
     
     case error(CentralManagerError)
+}
+
+public enum AdvertismentReceptionState {
+    case receiving      // Advertisments are being received
+    case notReceiving   // Advertisments are not being received
+    case suspended      // Advertisments are not being received because the local central has either stopped scanning or has connected to the peripheral
 }
 
 public enum PeripheralEvent {
@@ -35,6 +42,7 @@ public enum PeripheralEvent {
 
     case rssiUpdated(CentralManager.Peripheral, newRssi: NSNumber)
     case advertisementUpdated(CentralManager.Peripheral, newEntries: Advertisement)
+    case advertisementReceptionStateChange(CentralManager.Peripheral, newState: AdvertismentReceptionState) // Only occurs if the central's subscription specifies advertisement monitoring
 
     case error(PeripheralError)
 }

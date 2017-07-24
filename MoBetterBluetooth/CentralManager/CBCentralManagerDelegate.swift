@@ -12,8 +12,13 @@ import CoreBluetooth
 extension CentralManager {
     class CentralManagerDelegate : NSObject, CBCentralManagerDelegate {
 
-        internal var centralManager: CentralManager! = nil // The CentralManager initializes it
-        private var discoveredPeripherals = [String : PeripheralDelegate]()
+        private var centralManager: CentralManager
+
+        internal var peripheraDelegates = [String : PeripheralDelegate]()
+        
+        internal init(centralManager: CentralManager) {
+            self.centralManager = centralManager
+        }
 
         // This method is invoked when the CentralManager's delegate is set. It is also invoked whenever the Settings app is used to turn Bluetooth On/Off.
         // If the app is in the foreground and bluetooth is turned On/Off then the invocation occurs immediately. If the app is in the
@@ -70,24 +75,25 @@ extension CentralManager {
         @objc func centralManager(_ manager: CBCentralManager, didDiscover cbPeripheral: CBPeripheral, advertisementData data: [String : Any], rssi signalStrength: NSNumber) {
 
             let advertisement = Advertisement(data)
-            
             let key = getKey(for: cbPeripheral)
-            guard discoveredPeripherals[key] == nil else {
-                discoveredPeripherals[key]!.peripheral.updateReceived(newAdvertisement: advertisement, newRssi: signalStrength)
+            var delegate = peripheraDelegates[key]
+
+            if let peripheral = delegate?.peripheral {
+                peripheral.updateReceived(newAdvertisement: advertisement, newRssi: signalStrength)
                 return
             }
             
             let peripheral = centralManager.factory.makePeripheral(for: cbPeripheral, manager: centralManager, advertisement: advertisement, rssi: signalStrength)
-            let delegate = PeripheralDelegate(centralManager: centralManager, peripheral: peripheral)
-            self.discoveredPeripherals[key] = delegate
-            cbPeripheral.delegate = delegate
+            delegate = PeripheralDelegate(centralManager: centralManager, peripheral: peripheral)
+            self.peripheraDelegates[key] = delegate
             
-            centralManager.sendEvent(.peripheralDiscovered(peripheral, rssi: signalStrength))
+            centralManager.sendEvent(.peripheralDiscovered(peripheral))
 
             if centralManager.subscription.autoConnect && peripheral.connectable {
                 manager.connect(cbPeripheral, options: nil)
                 peripheral.sendEvent(.stateChanged(peripheral)) // disconnected => connecting
             }
+
 
             // TODO: Revisit the scenario of a non Apple beacon
             /*
@@ -102,7 +108,7 @@ extension CentralManager {
         
         @objc func centralManager(_ manager: CBCentralManager, didConnect cbPeripheral: CBPeripheral) {
             let key = getKey(for: cbPeripheral)
-            guard let delegate = discoveredPeripherals[key] else { fatalError("Unrecognized peripheral - \(cbPeripheral)") }
+            guard let delegate = peripheraDelegates[key] else { fatalError("Unrecognized peripheral - \(cbPeripheral)") }
             let peripheral = delegate.peripheral
 
             if let handler = peripheral.connectCompletionhandler {
@@ -120,7 +126,7 @@ extension CentralManager {
         
         @objc func centralManager(_ manager: CBCentralManager, didFailToConnect cbPeripheral: CBPeripheral, error: Error?) {
             let key = getKey(for: cbPeripheral)
-            guard let delegate = discoveredPeripherals[key] else { fatalError("Unrecognized peripheral - \(cbPeripheral)") }
+            guard let delegate = peripheraDelegates[key] else { fatalError("Unrecognized peripheral - \(cbPeripheral)") }
             let peripheral = delegate.peripheral
 
             let centralManagerError = CentralManagerError.peripheralFailedToConnect(peripheral, cbError: error)
@@ -138,7 +144,7 @@ extension CentralManager {
         // TODO: If the subscription has Auto Connect on then should a disconnect automatically trigger a reconnect?
         @objc func centralManager(_ manager: CBCentralManager, didDisconnectPeripheral cbPeripheral: CBPeripheral, error: Error?) {
             let key = getKey(for: cbPeripheral)
-            guard let delegate = discoveredPeripherals[key] else { fatalError("Unrecognized peripheral - \(cbPeripheral)") }
+            guard let delegate = peripheraDelegates[key] else { fatalError("Unrecognized peripheral - \(cbPeripheral)") }
             let peripheral = delegate.peripheral
 
             peripheral.services.removeAll()
@@ -163,13 +169,22 @@ extension CentralManager {
 
             peripheral.sendEvent(.stateChanged(delegate.peripheral)) // disconnecting => disconnected, or connected => disconnected
         }
-        
-        func getKey(for cbPeripheral: CBPeripheral) -> String {
+ 
+        internal func removePeripheral(_ peripheral: Peripheral) {
+            for (key, value) in peripheraDelegates {
+                if (value.peripheral === peripheral) {
+                    self.peripheraDelegates.removeValue(forKey: key);
+                    break
+                }
+            }
+        }
+
+        private func getKey(for cbPeripheral: CBPeripheral) -> String {
             return cbPeripheral.identifier.uuidString
         }
         
         // TODO: Create a Blacklisting API
-        func blackListed(_ name: String?) -> Bool {
+        private func blackListed(_ name: String?) -> Bool {
             if let name = name {
                 switch name {
                 case "Apple TV", "Robert's MacBook Pro":
