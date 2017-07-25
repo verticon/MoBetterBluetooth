@@ -170,13 +170,14 @@ extension CentralManager {
             peripheral.sendEvent(.stateChanged(delegate.peripheral)) // disconnecting => disconnected, or connected => disconnected
         }
  
-        internal func removePeripheral(_ peripheral: Peripheral) {
+        internal func removePeripheral(_ peripheral: Peripheral) -> Bool {
             for (key, value) in peripheraDelegates {
                 if (value.peripheral === peripheral) {
                     self.peripheraDelegates.removeValue(forKey: key);
-                    break
+                    return true
                 }
             }
+            return false
         }
 
         private func getKey(for cbPeripheral: CBPeripheral) -> String {

@@ -71,6 +71,7 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
             return DispatchQueue.main
         }
     }
+
     public let factory: CentralManagerTypesFactory
     
     public var isReady: Bool {
@@ -91,11 +92,18 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
         }
     }
 
-    public func removePeripheral(_ peripheral: Peripheral) {
-        cbManagerDelegate.removePeripheral(peripheral)
-        sendEvent(.peripheralRemoved(peripheral))
+    public func removePeripheral(at index: Int) -> Bool {
+        let peripherals = self.peripherals
+        if index >= peripherals.count { return false }
+        return removePeripheral(peripherals[index])
     }
-
+    
+    public func removePeripheral(_ peripheral: Peripheral) -> Bool {
+        let status = cbManagerDelegate.removePeripheral(peripheral)
+        if status { sendEvent(.peripheralRemoved(peripheral)) }
+        return status
+    }
+    
     internal func sendEvent(_ event: CentralManagerEvent) {
         broadcast(event)
     }
