@@ -42,7 +42,7 @@ extension CentralManagerTypesFactory {
 
 extension CentralManager {
 
-    open class Peripheral : Broadcaster<PeripheralEvent>, CustomStringConvertible {
+    open class Peripheral : Broadcaster<PeripheralEvent>, CustomStringConvertible, Hashable {
         
         public let manager: CentralManager
 
@@ -143,7 +143,7 @@ extension CentralManager {
 
         public var description : String {
             var description = "\(cbPeripheral)"
-            if cbPeripheral.state == .connected { description += ", services \(servicesDiscovered ? "discovered" : "not discovered")" }
+            if cbPeripheral.state == .connected { description += ", services \(servicesDiscovered ? "discovered, count = \(services.count)" : "not discovered")" }
             description += "\nAdvertisement\(advertisement)"
             
             if servicesDiscovered {
@@ -210,6 +210,12 @@ extension CentralManager {
         subscript(cbService: CBService) -> Service? {
             return self[cbService.uuid]
         }
+
+        public var hashValue : Int {
+            get {
+                return cbPeripheral.hash
+            }
+        }
     }
 
     open class Attribute {
@@ -256,7 +262,7 @@ extension CentralManager {
         
         public var description : String {
             if let service = cbService {
-                var description = "\(id.name ?? "")\(service), characteristics \(characteristicsDiscovered ? "discovered" : "not discovered")"
+                var description = "\(id.name ?? "")\(service), characteristics \(characteristicsDiscovered ? "discovered, count = \(characteristics.count)" : "not discovered")"
                 for characteristic in characteristics {
                     description += increaseIndent("\n\(characteristic)")
                 }
@@ -357,7 +363,7 @@ extension CentralManager {
         public var description : String {
             if let characteristic = cbCharacteristic {
                 let properties = self.properties.enabled.reduce(""){ $0 + ($0.isEmpty ? "" : "|" ) + $1 }
-                var description = "\(id.name ?? "")\(characteristic), Properties = \(properties), descriptors \(descriptorsDiscovered ? "discovered" : "not discovered")"
+                var description = "\(id.name ?? "")\(characteristic), Properties = \(properties), descriptors \(descriptorsDiscovered ? "discovered, count = \(descriptors.count)" : "not discovered")"
                 for descriptor in descriptors {
                     description += increaseIndent("\n\(descriptor)")
                 }
@@ -615,3 +621,10 @@ extension CentralManager {
         }
     }
 }
+
+extension CentralManager.Peripheral : Equatable {
+    public static func == (lhs: CentralManager.Peripheral , rhs: CentralManager.Peripheral ) -> Bool {
+        return lhs.cbPeripheral.identifier.uuidString == rhs.cbPeripheral.identifier.uuidString
+    }
+}
+

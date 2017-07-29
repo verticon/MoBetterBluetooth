@@ -86,18 +86,12 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
         }
     }
     
-    public var peripherals: [Peripheral] {
+    public var peripherals: Set<Peripheral> {
         get {
-            return cbManagerDelegate.peripheraDelegates.values.map { $0.peripheral }
+            return Set<Peripheral>(cbManagerDelegate.peripheraDelegates.values.map { $0.peripheral })
         }
     }
 
-    public func removePeripheral(at index: Int) -> Bool {
-        let peripherals = self.peripherals
-        if index >= peripherals.count { return false }
-        return removePeripheral(peripherals[index])
-    }
-    
     public func removePeripheral(_ peripheral: Peripheral) -> Bool {
         let status = cbManagerDelegate.removePeripheral(peripheral)
         if status { sendEvent(.peripheralRemoved(peripheral)) }
