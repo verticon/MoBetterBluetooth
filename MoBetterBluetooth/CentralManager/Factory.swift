@@ -112,7 +112,7 @@ extension CentralManager {
             advertisementReceived()
         }
 
-        // TODO: Determine - 1) How to measure the advertising interval, 2) What value to use for the timeout prior to having measured the advertising interval
+        // TODO: 1) Measure the advertising interval, 2) Determine what value to use for the timeout prior to having measured the advertising interval, 3) Use a weak reference to self
         private var advertisementMonitoringWorkItem: DispatchWorkItem?
         private func advertisementReceived() {
             if manager.subscription.monitorAdvertisements {
