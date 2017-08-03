@@ -10,6 +10,12 @@ import Foundation
 import CoreBluetooth
 import VerticonsToolbox
 
+public enum AdvertisementReceptionState {
+    case receiving      // Advertisments are being received
+    case notReceiving   // Advertisments are not being received
+    case suspended      // Advertisments are not being received because the local central has either stopped scanning or has connected to the peripheral
+}
+
 public struct Advertisement : CustomStringConvertible {
     public internal(set) var data: [String : Any]
     

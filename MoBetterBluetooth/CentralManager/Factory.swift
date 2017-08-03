@@ -49,7 +49,7 @@ extension CentralManager {
         public let cbPeripheral: CBPeripheral
         public private(set) var advertisement: Advertisement
         public private(set) var rssi: NSNumber
-        public private(set) var receptionState: AdvertismentReceptionState
+        public private(set) var receptionState: AdvertisementReceptionState
         public private(set) var discoveryTime: String
         public private(set) var discoveryLocation: String?
 
