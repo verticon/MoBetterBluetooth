@@ -54,14 +54,15 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
                 cbManager = CBCentralManager(delegate: nil, queue: dispatchQueue)
             }
             else {
-                let _ = stopScanning()
+                _ = stopScanning()
                 cbManager.delegate = nil
+                for peripheral in peripherals { _ = removePeripheral(peripheral) }
                 cbManagerDelegate = nil
             }
             _subscription = newValue
             cbManagerDelegate = CentralManagerDelegate(centralManager: self)
             cbManager.delegate = cbManagerDelegate
-            if wasScanning { let _ = startScanning() }
+            if wasScanning { _ = startScanning() }
             sendEvent(.subscriptionUpdated(self))
         }
     }
