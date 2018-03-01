@@ -32,6 +32,7 @@ xcuserdata/
 .build/
 
 # Carthage
-Carthage/Build
+Carthage
 
+VerticonsToolbox*
 

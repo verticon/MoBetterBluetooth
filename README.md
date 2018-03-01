@@ -95,11 +95,22 @@ Below is some sample code. See [ButtonLed](https://github.com/verticon/ButtonLed
 
 Notes:
 
-* The MoBetterBluetooth framework's xcode project includes a subprojects which are in the submodules of the framework's GitHub repository. Therefore, clone the framework's repository using the --recursive option so as to obtain the submodules. Downloading the ZIP archive will not work; it does not capture the submodules.
+* To include MoBetterBluetooth in your own projects:
+  * Carthage - Add the following two lines to your project's Cartfile
+    * github "verticon/VerticonsToolbox"
+    * github "verticon/MoBetterBluetooth"
+  * CocoaPods - Add the following two lines to your project's Podfile
+    * pod 'VerticonsToolbox'
+    * pod 'MoBetterBluetooth'
 
-* Dependency Managers:
-    * CocoaPods: There are pods for MoBetterBluetooth and its dependencies.
 
-    * Carthage: You can add `github "verticon/MoBetterBluetooth" ~> x.x.x` to your Cartfile. `carthage  update` will build MoBetterBlutooth and its dependencies. As usual, you will find the binaries in Carthage/Build and the project files in Carthage/Checkouts. A consequence of using submodules is that the dependency projects will exist in two places: Carthage/Checkouts and Carthage/Checkouts/MoBeterBluetooth/Carthage/Checkouts. If you choose to ad the MoBetterBlutooth project to your xcode project/workspace then you only need to add /Carthage/Checkouts/MoBetterBluetooth/MoBetterBlutooth.xcodeproj; doing so will give you everything.
+* To build MoBeterBluetooth:
+  1. Clone the repository or download the zip archive.
+  2. Execute the provided invokeCarthage shell script to build VerticonsToolbox.
+  3. Copy VerticonsToolbox.framework from ../MoBetterBluetooth/Carthage/Build/iOS to ../MoBetterBluetooth.
+  4. Open MoBetterBluetooth.xcodeproj and build.
+
+
+
 
 [![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
