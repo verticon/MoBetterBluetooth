@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Contacts
 import CoreBluetooth
 import CoreLocation
 import VerticonsToolbox
@@ -74,7 +75,7 @@ extension CentralManager {
 
             super.init()
 
-            if let location = UserLocation.instance?.location {
+            if let location = UserLocation.instance.currentLocation {
                 CLGeocoder().reverseGeocodeLocation(location, completionHandler: geocoderCompletionHandler)
             }
 
@@ -86,7 +87,7 @@ extension CentralManager {
         }
 
         private func geocoderCompletionHandler(placemarks: [CLPlacemark]?, error: Error?) {
-            if let address = placemarks?[0].addressDictionary?["Street"] {
+            if let address = placemarks?[0].postalAddress?.street {
                 discoveryLocation = String(describing: address)
                 sendEvent(.locationDetermined(self, discoveryLocation!))
             }

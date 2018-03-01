@@ -18,7 +18,7 @@ import VerticonsToolbox
 
 public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConvertible {
     
-    private class DefaultFactory : CentralManagerTypesFactory {}
+    public class DefaultFactory : CentralManagerTypesFactory { public init() {} }
     
     // Instance Members **********************************************************************************************
 
@@ -108,7 +108,7 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
         
         let serviceUuids = subscription.getServiceUuids()
         cbManager.scanForPeripherals(withServices: serviceUuids, options: [CBCentralManagerScanOptionAllowDuplicatesKey : NSNumber(value: subscription.monitorAdvertisements)])
-        sendEvent(.startedScanning(self, serviceUuids))
+        sendEvent(.startedScanning((self, serviceUuids)))
 
         return .success
     }

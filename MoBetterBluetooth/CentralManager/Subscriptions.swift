@@ -12,24 +12,24 @@ import VerticonsToolbox
 
 extension CentralManager {
 
-    public struct CharacteristicSubscription : Encodable, CustomStringConvertible {
+    public struct CharacteristicSubscription : VerticonsToolbox.Encodable, CustomStringConvertible {
         public let id: Identifier
 
         public init(id: Identifier) {
             self.id = id
         }
 
-        public init?(_ properties: Encodable.Properties?) {
+        public init?(_ properties: VerticonsToolbox.Encodable.Properties?) {
             guard let properties = properties else { return nil }
 
-            if  let id = Identifier(properties["id"] as? Encodable.Properties) {
+            if  let id = Identifier(properties["id"] as? VerticonsToolbox.Encodable.Properties) {
                 self.id = id
             } else {
                 return nil
             }
         }
         
-        public func encode() -> Encodable.Properties {
+        public func encode() -> VerticonsToolbox.Encodable.Properties {
             return ["id": id.encode()]
         }
 
@@ -38,7 +38,7 @@ extension CentralManager {
         }
     }
 
-    public struct ServiceSubscription : Encodable, CustomStringConvertible {
+    public struct ServiceSubscription : VerticonsToolbox.Encodable, CustomStringConvertible {
         public let id: Identifier
         public let characteristics: [CharacteristicSubscription] // If empty then all of the service's characteristics and descriptors will be discovered
         
@@ -47,11 +47,11 @@ extension CentralManager {
             self.characteristics = characteristics
         }
 
-        public init?(_ properties: Encodable.Properties?) {
+        public init?(_ properties: VerticonsToolbox.Encodable.Properties?) {
             guard let properties = properties else { return nil }
 
-            if  let id = Identifier(properties["id"] as? Encodable.Properties),
-                let characteristics = properties["characteristics"] as? [Encodable.Properties] {
+            if  let id = Identifier(properties["id"] as? VerticonsToolbox.Encodable.Properties),
+                let characteristics = properties["characteristics"] as? [VerticonsToolbox.Encodable.Properties] {
                 self.id = id
                 self.characteristics = characteristics.decode(type: CharacteristicSubscription.self)
             } else {
@@ -59,7 +59,7 @@ extension CentralManager {
             }
         }
         
-        public func encode() -> Encodable.Properties {
+        public func encode() -> VerticonsToolbox.Encodable.Properties {
             return ["id": id.encode(), "characteristics": characteristics.encode()]
         }
 
@@ -93,7 +93,7 @@ extension CentralManager {
         }
     }
 
-    public struct PeripheralSubscription : Encodable, CustomStringConvertible {
+    public struct PeripheralSubscription : VerticonsToolbox.Encodable, CustomStringConvertible {
         public let name: String
         public let services: [ServiceSubscription] // If empty then all of the peripheral's services, characteristics and descriptors will be discovered
         public let autoConnect: Bool
@@ -108,11 +108,11 @@ extension CentralManager {
             self.monitorAdvertisements = monitorAdvertisements
         }
         
-        public init?(_ properties: Encodable.Properties?) {
+        public init?(_ properties: VerticonsToolbox.Encodable.Properties?) {
             guard let properties = properties else { return nil }
             
             if  let name = properties["name"] as? String,
-                let services = properties["services"] as? [Encodable.Properties],
+                let services = properties["services"] as? [VerticonsToolbox.Encodable.Properties],
                 let autoConnect = properties["autoConnect"] as? Bool,
                 let autoDiscover = properties["autoDiscover"] as? Bool,
                 let monitorAdvertisements = properties["monitorAdvertisements"] as? Bool {
@@ -127,7 +127,7 @@ extension CentralManager {
             }
         }
         
-        public func encode() -> Encodable.Properties {
+        public func encode() -> VerticonsToolbox.Encodable.Properties {
             return ["name": name, "services" : services.encode(), "autoConnect" : autoConnect, "autoDiscover" :  autoDiscover, "monitorAdvertisements" :  monitorAdvertisements]
         }
         

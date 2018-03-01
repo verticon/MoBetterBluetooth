@@ -10,7 +10,7 @@ import Foundation
 import CoreBluetooth
 import VerticonsToolbox
 
-public struct Identifier : Encodable, CustomStringConvertible  {
+public struct Identifier : VerticonsToolbox.Encodable, CustomStringConvertible  {
     public let uuid: CBUUID
     public let name: String?
     
@@ -19,7 +19,7 @@ public struct Identifier : Encodable, CustomStringConvertible  {
         self.name = name ?? nameForWellKnownUuid(uuid)
     }
     
-    public init?(_ properties: Encodable.Properties?) {
+    public init?(_ properties: VerticonsToolbox.Encodable.Properties?) {
         guard let properties = properties else { return nil }
         
         if  let name = properties["name"] as? String,
@@ -31,7 +31,7 @@ public struct Identifier : Encodable, CustomStringConvertible  {
         }
     }
     
-    public func encode() -> Encodable.Properties {
+    public func encode() -> VerticonsToolbox.Encodable.Properties {
         return ["name": name ?? "", "uuid": uuid.uuidString]
     }
     
