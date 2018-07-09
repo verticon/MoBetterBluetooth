@@ -122,6 +122,8 @@ extension CentralManager {
             }
 
             peripheral.sendEvent(.stateChanged(peripheral)) // connecting => connected
+
+            peripheral.updateReceptionState()
         }
         
         @objc func centralManager(_ manager: CBCentralManager, didFailToConnect cbPeripheral: CBPeripheral, error: Error?) {
@@ -168,6 +170,8 @@ extension CentralManager {
             }
 
             peripheral.sendEvent(.stateChanged(delegate.peripheral)) // disconnecting => disconnected, or connected => disconnected
+
+            peripheral.updateReceptionState()
         }
  
         internal func removePeripheral(_ peripheral: Peripheral) -> Bool {

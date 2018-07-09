@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import Contacts
 import CoreBluetooth
 import CoreLocation
 import VerticonsToolbox
@@ -50,7 +49,6 @@ extension CentralManager {
         public let cbPeripheral: CBPeripheral
         public private(set) var advertisement: Advertisement
         public private(set) var rssi: NSNumber
-        public private(set) var receptionState: AdvertisementReceptionState
         public private(set) var discoveryTime: String
         public private(set) var discoveryLocation: String?
 
@@ -68,7 +66,6 @@ extension CentralManager {
 
             self.advertisement = advertisement
             self.rssi = rssi
-            receptionState = .receiving
 
             discoveryTime = LocalTime.text
             servicesDiscovered = false
@@ -79,7 +76,9 @@ extension CentralManager {
                 CLGeocoder().reverseGeocodeLocation(location, completionHandler: geocoderCompletionHandler)
             }
 
-            advertisementReceived()
+            if manager.subscription.monitorAdvertisements {
+               initiateTimeoutDetection()
+            }
         }
 
         deinit {
@@ -87,13 +86,56 @@ extension CentralManager {
         }
 
         private func geocoderCompletionHandler(placemarks: [CLPlacemark]?, error: Error?) {
-            if let address = placemarks?[0].postalAddress?.street {
+            if let address = placemarks?[0].addressDictionary?["Street"] {
                 discoveryLocation = String(describing: address)
                 sendEvent(.locationDetermined(self, discoveryLocation!))
             }
         }
 
+        public class Time {
+            private static let dateFormatter: DateFormatter = {
+                var formatter = DateFormatter()
+                formatter.setLocalizedDateFormatFromTemplate("HH:mm:ss.SSS")
+                return formatter
+            }()
+            
+            public class var text : String {
+                return dateFormatter.string(from: Date())
+            }
+        }
+
+        // ************************************************************************************************************************
+        // Advertisments
+        // ************************************************************************************************************************
+
+        private static let defaultAdvertisementTimeout = 20
+        private var advertisementTimeout = defaultAdvertisementTimeout
+        private var lastAdvertisementReceivedTime: Date? = Date()
+        private var advertisementTimeoutDetector: DispatchWorkItem?
+
+        private var isAdvertising: Bool = true {
+            didSet {
+                if oldValue != isAdvertising { updateReceptionState() }
+            }
+        }
+
+        public private(set) var receptionState: AdvertisementReceptionState = .receiving
+
+        internal func updateReceptionState() {
+            let prevReceptionState = receptionState
+
+            if cbPeripheral.state != .disconnected { receptionState = .connected }
+            else if !manager.isScanning { receptionState = .notScanning }
+            else { receptionState = isAdvertising ? .receiving : .notReceiving } // The peripheral has powered off, or moved out of range, or been connected to by another central.
+
+            if receptionState != prevReceptionState { sendEvent(.advertisementReceptionStateChange(self, newState: receptionState)) }
+        }
+
         public func updateReceived(newAdvertisement: Advertisement, newRssi: NSNumber) {
+
+            advertisementTimeoutDetector?.cancel()
+            isAdvertising = true
+
             var modified = false
             newAdvertisement.data.forEach {
                 if !advertisement.data.keys.contains($0){
@@ -105,38 +147,44 @@ extension CentralManager {
                 sendEvent(.advertisementUpdated(self, newEntries: newAdvertisement))
             }
 
+
             if rssi != newRssi {
                 rssi = newRssi
                 sendEvent(.rssiUpdated(self, newRssi: newRssi))
             }
-            
-            advertisementReceived()
-        }
 
-        // TODO: 1) Measure the advertising interval, 2) Determine what value to use for the timeout prior to having measured the advertising interval, 3) Use a weak reference to self
-        private var advertisementMonitoringWorkItem: DispatchWorkItem?
-        private func advertisementReceived() {
             if manager.subscription.monitorAdvertisements {
+                let receiveTime = Date()
 
-                if let item = advertisementMonitoringWorkItem { item.cancel() }
-                
-                if receptionState != .receiving {
-                    receptionState = .receiving
-                    sendEvent(.advertisementReceptionStateChange(self, newState: .receiving))
+                // Adjust the timeout period based on the observed advertising interval
+                if let prevReceiveTime = self.lastAdvertisementReceivedTime {
+                    let elapsedTime = Int(receiveTime.timeIntervalSince(prevReceiveTime).rounded(.up))
+                    if elapsedTime > 1 { // Skip the intervals produced by the scan response
+                        advertisementTimeout = 2 * elapsedTime // Let's be conservative. iOS seems to vary the delivery rate.
+                    }
+                }
+                else {
+                    advertisementTimeout = Peripheral.defaultAdvertisementTimeout
                 }
 
-                advertisementMonitoringWorkItem = DispatchWorkItem() {
-                    // If both scanning and disconnected then no advertisements means that the peripheral:
-                    // 1) Powered off or, 2) Moved out of range or, 3) Was connected to by some other central.
-                    self.receptionState = (self.manager.isScanning && self.cbPeripheral.state == .disconnected) ? .notReceiving : .suspended
-                    self.sendEvent(.advertisementReceptionStateChange(self, newState: self.receptionState))
-                }
-                
-                manager.dispatchQueue.asyncAfter(deadline: .now() + .seconds(20), execute: advertisementMonitoringWorkItem!)
+                self.lastAdvertisementReceivedTime = receiveTime
+
+                initiateTimeoutDetection()
             }
         }
 
-        public private(set) var isAdvertising: Bool = true
+        private func initiateTimeoutDetection() {
+            advertisementTimeoutDetector = DispatchWorkItem() { [weak self] in
+                guard let peripheral = self else { return }
+                peripheral.isAdvertising = false
+                peripheral.lastAdvertisementReceivedTime = nil
+            }
+            manager.dispatchQueue.asyncAfter(deadline: .now() + .seconds(advertisementTimeout), execute: advertisementTimeoutDetector!)
+        }
+    
+        // ************************************************************************************************************************
+        //
+        // ************************************************************************************************************************
 
         public var name: String {
             return cbPeripheral.name ?? cbPeripheral.identifier.uuidString

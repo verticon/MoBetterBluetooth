@@ -39,7 +39,7 @@
 		E1B761F31E5DB5DA00B01E19 /* Subscriptions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Subscriptions.swift; path = CentralManager/Subscriptions.swift; sourceTree = "<group>"; };
 		E1B761F41E5DB5DA00B01E19 /* Factory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Factory.swift; path = CentralManager/Factory.swift; sourceTree = "<group>"; };
 		E1C4441B1EBCDDF40064DEF6 /* Identifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Identifier.swift; sourceTree = "<group>"; };
-		E1FCACC0204867F700D9C327 /* VerticonsToolbox.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = VerticonsToolbox.framework; sourceTree = SOURCE_ROOT; };
+		E1FCACC0204867F700D9C327 /* VerticonsToolbox.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = VerticonsToolbox.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */

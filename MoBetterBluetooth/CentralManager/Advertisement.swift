@@ -12,8 +12,9 @@ import VerticonsToolbox
 
 public enum AdvertisementReceptionState {
     case receiving      // Advertisments are being received
-    case notReceiving   // Advertisments are not being received
-    case suspended      // Advertisments are not being received because the local central has either stopped scanning or has connected to the peripheral
+    case connected      // Advertisments are not being received because the local central has connected to the peripheral
+    case notScanning    // Advertisments are not being received because the local central has stopped scanning
+    case notReceiving   // Advertisments are not being received because the peripheral has powered off, or moved out of range, or been connected to by another central
 }
 
 public struct Advertisement : CustomStringConvertible {

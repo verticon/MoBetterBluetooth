@@ -110,6 +110,8 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
         cbManager.scanForPeripherals(withServices: serviceUuids, options: [CBCentralManagerScanOptionAllowDuplicatesKey : NSNumber(value: subscription.monitorAdvertisements)])
         sendEvent(.startedScanning((self, serviceUuids)))
 
+        peripherals.forEach { $0.updateReceptionState() }
+
         return .success
     }
 
@@ -119,6 +121,8 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
         
         cbManager.stopScan()
         sendEvent(.stoppedScanning(self))
+
+        peripherals.forEach { $0.updateReceptionState() }
 
         return true
     }
