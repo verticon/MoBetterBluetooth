@@ -86,7 +86,7 @@ extension CentralManager {
         }
 
         private func geocoderCompletionHandler(placemarks: [CLPlacemark]?, error: Error?) {
-            if let address = placemarks?[0].addressDictionary?["Street"] {
+            if let address = placemarks?[0].thoroughfare {
                 discoveryLocation = String(describing: address)
                 sendEvent(.locationDetermined(self, discoveryLocation!))
             }
