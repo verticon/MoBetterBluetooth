@@ -128,6 +128,6 @@ public class CentralManager : Broadcaster<CentralManagerEvent>, CustomStringConv
     }
 
     public var description : String {
-        return "\(name) - \(cbManager)"
+        return "\(name) - \(String(describing: cbManager))"
     }
 }

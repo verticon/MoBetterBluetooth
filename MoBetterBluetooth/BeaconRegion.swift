@@ -59,8 +59,8 @@ open class BeaconRegion : NSObject, NSCoding {
             return identifier.major << 16 + identifier.minor
         }
 
-        open let index: Int
-        open let identifier: (major: Int, minor: Int)
+        public let index: Int
+        public let identifier: (major: Int, minor: Int)
 
         let beacon: CLBeacon
         let parent: BeaconRegion
@@ -153,7 +153,7 @@ open class BeaconRegion : NSObject, NSCoding {
 
     // Class Members *************************************************************************************************
 
-    open static let invalidListenerKey = -1
+    public static let invalidListenerKey = -1
 
     fileprivate static var locationManagerDelegate: LocationManagerDelegate? // Retain the delegate
     fileprivate static var locationManager: CLLocationManager? = {
