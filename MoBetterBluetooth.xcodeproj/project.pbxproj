@@ -11,6 +11,11 @@
 		E10E23FB1E9C19CC00F27B67 /* Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10E23F81E9C19CC00F27B67 /* Events.swift */; };
 		E10E23FC1E9C19CC00F27B67 /* Status.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10E23F91E9C19CC00F27B67 /* Status.swift */; };
 		E131E8261EA11CAB00DC8863 /* Advertisement.swift in Sources */ = {isa = PBXBuildFile; fileRef = E131E8251EA11CAB00DC8863 /* Advertisement.swift */; };
+		E19BFF332189EBB700D5B2A4 /* Descriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E19BFF2E2189EBB600D5B2A4 /* Descriptor.swift */; };
+		E19BFF342189EBB700D5B2A4 /* Characteristic.swift in Sources */ = {isa = PBXBuildFile; fileRef = E19BFF2F2189EBB700D5B2A4 /* Characteristic.swift */; };
+		E19BFF352189EBB700D5B2A4 /* Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = E19BFF302189EBB700D5B2A4 /* Peripheral.swift */; };
+		E19BFF362189EBB700D5B2A4 /* Attribute.swift in Sources */ = {isa = PBXBuildFile; fileRef = E19BFF312189EBB700D5B2A4 /* Attribute.swift */; };
+		E19BFF372189EBB700D5B2A4 /* Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = E19BFF322189EBB700D5B2A4 /* Service.swift */; };
 		E1B761E51E5DB07C00B01E19 /* MoBetterBluetooth.h in Headers */ = {isa = PBXBuildFile; fileRef = E1B761E31E5DB07C00B01E19 /* MoBetterBluetooth.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E1B761ED1E5DB57E00B01E19 /* BeaconRegion.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B761EB1E5DB57E00B01E19 /* BeaconRegion.swift */; };
 		E1B761EE1E5DB57E00B01E19 /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B761EC1E5DB57E00B01E19 /* Utilities.swift */; };
@@ -28,6 +33,11 @@
 		E10E23F81E9C19CC00F27B67 /* Events.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Events.swift; path = CentralManager/Events.swift; sourceTree = "<group>"; };
 		E10E23F91E9C19CC00F27B67 /* Status.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Status.swift; path = CentralManager/Status.swift; sourceTree = "<group>"; };
 		E131E8251EA11CAB00DC8863 /* Advertisement.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Advertisement.swift; path = CentralManager/Advertisement.swift; sourceTree = "<group>"; };
+		E19BFF2E2189EBB600D5B2A4 /* Descriptor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Descriptor.swift; path = CentralManager/Descriptor.swift; sourceTree = "<group>"; };
+		E19BFF2F2189EBB700D5B2A4 /* Characteristic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Characteristic.swift; path = CentralManager/Characteristic.swift; sourceTree = "<group>"; };
+		E19BFF302189EBB700D5B2A4 /* Peripheral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Peripheral.swift; path = CentralManager/Peripheral.swift; sourceTree = "<group>"; };
+		E19BFF312189EBB700D5B2A4 /* Attribute.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Attribute.swift; path = CentralManager/Attribute.swift; sourceTree = "<group>"; };
+		E19BFF322189EBB700D5B2A4 /* Service.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Service.swift; path = CentralManager/Service.swift; sourceTree = "<group>"; };
 		E1B761E01E5DB07C00B01E19 /* MoBetterBluetooth.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MoBetterBluetooth.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1B761E31E5DB07C00B01E19 /* MoBetterBluetooth.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MoBetterBluetooth.h; sourceTree = "<group>"; };
 		E1B761E41E5DB07C00B01E19 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -87,6 +97,11 @@
 		E1B761EF1E5DB5BF00B01E19 /* CentralManager */ = {
 			isa = PBXGroup;
 			children = (
+				E19BFF312189EBB700D5B2A4 /* Attribute.swift */,
+				E19BFF2F2189EBB700D5B2A4 /* Characteristic.swift */,
+				E19BFF2E2189EBB600D5B2A4 /* Descriptor.swift */,
+				E19BFF302189EBB700D5B2A4 /* Peripheral.swift */,
+				E19BFF322189EBB700D5B2A4 /* Service.swift */,
 				E131E8251EA11CAB00DC8863 /* Advertisement.swift */,
 				E1B761F01E5DB5DA00B01E19 /* CBCentralManagerDelegate.swift */,
 				E1B761F11E5DB5DA00B01E19 /* CBPeripheralDelegate.swift */,
@@ -189,6 +204,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E19BFF332189EBB700D5B2A4 /* Descriptor.swift in Sources */,
 				E1B761F81E5DB5DA00B01E19 /* Subscriptions.swift in Sources */,
 				E10E23FB1E9C19CC00F27B67 /* Events.swift in Sources */,
 				E1B761EE1E5DB57E00B01E19 /* Utilities.swift in Sources */,
@@ -198,8 +214,12 @@
 				E1B761F91E5DB5DA00B01E19 /* Factory.swift in Sources */,
 				E1B761ED1E5DB57E00B01E19 /* BeaconRegion.swift in Sources */,
 				E1B761F51E5DB5DA00B01E19 /* CBCentralManagerDelegate.swift in Sources */,
+				E19BFF352189EBB700D5B2A4 /* Peripheral.swift in Sources */,
+				E19BFF372189EBB700D5B2A4 /* Service.swift in Sources */,
 				E131E8261EA11CAB00DC8863 /* Advertisement.swift in Sources */,
 				E1C4441C1EBCDDF40064DEF6 /* Identifier.swift in Sources */,
+				E19BFF342189EBB700D5B2A4 /* Characteristic.swift in Sources */,
+				E19BFF362189EBB700D5B2A4 /* Attribute.swift in Sources */,
 				E1B761F71E5DB5DA00B01E19 /* CentralManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
