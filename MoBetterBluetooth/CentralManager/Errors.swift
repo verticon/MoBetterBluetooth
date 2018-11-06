@@ -32,7 +32,14 @@ public enum PeripheralError : Error {
     case servicesDiscoveryError(CentralManager.Peripheral, cbError: Error)
     case charactericticsDiscoveryError(CentralManager.Service, cbError: Error)
     case descriptorsDiscoveryError(CentralManager.Characteristic, cbError: Error)
-    
+
+    // So far I have only tested performing attribute reads and writes on the main thread.
+    // I have observed that core bluetooth executes the callbacks on the main thread.
+    // What would happen if a read or write were issued from another thread: would the
+    // callback occur on that thread? Also, I have written code that is not thread
+    // safe: it assumes that reads, writes, and callbacks always occur on the same thread.
+    case notMainThread
+
     case notReadable
     case readInProgress
     case characteristicReadError(CentralManager.Characteristic, cbError: Error)
