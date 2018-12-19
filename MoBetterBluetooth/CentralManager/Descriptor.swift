@@ -44,9 +44,12 @@ extension CentralManager {
 
             guard let descriptor = cbDescriptor else { return .failure(.cbAttributeIsNil) }
 
-            readCompletionHandlers.append(completionHandler)
-
-            if !readInProgress { parent.parent.parent.cbPeripheral.readValue(for: descriptor) }
+            if readInProgress {
+                readCompletionHandlers.append(completionHandler)
+            } else {
+                readCompletionHandlers.append(completionHandler)
+                parent.parent.parent.cbPeripheral.readValue(for: descriptor)
+            }
             
             return .success
         }
@@ -62,7 +65,7 @@ extension CentralManager {
             
             let handlers = readCompletionHandlers
             readCompletionHandlers.removeAll()
-            for handler in handlers { handler(result) } // The handler could call read. Would CB be okay with this?
+            for handler in handlers { handler(result) } // TODO: The handler could call read. Would CB be okay with this?
         }
         
         // ************************** Writing ******************************
